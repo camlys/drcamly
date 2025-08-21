@@ -8,10 +8,21 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Doctor } from '@/lib/data';
+import { Doctor, mockDoctors } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Star } from 'lucide-react';
+
+const StarRating = ({ rating, count }: { rating: number, count: number }) => {
+    return (
+        <div className="flex items-center gap-1">
+            <Star className={`h-4 w-4 ${rating > 0 ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'}`} />
+            <span className="text-sm font-medium">{rating > 0 ? rating.toFixed(1) : 'New'}</span>
+            {count > 0 && <span className="text-xs text-muted-foreground">({count})</span>}
+        </div>
+    )
+}
 
 export default function DoctorSearch() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,21 +35,10 @@ export default function DoctorSearch() {
   useEffect(() => {
     const fetchDoctors = async () => {
       setLoading(true);
-      // Check if supabase client is actually configured
-      if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        const { data, error } = await supabase.from('doctors').select('id, name, specialty');
-        
-        if (error) {
-          console.error("Error fetching doctors:", error);
-          setDoctors([]);
-        } else if (data) {
-          setDoctors(data);
-          const uniqueSpecialties = ["All", ...new Set(data.map(d => d.specialty))];
-          setSpecialties(uniqueSpecialties);
-        }
-      } else {
-         setDoctors([]);
-      }
+      // Simulating fetch from mock data
+      setDoctors(mockDoctors);
+      const uniqueSpecialties = ["All", ...new Set(mockDoctors.map(d => d.specialty))];
+      setSpecialties(uniqueSpecialties);
 
       setLoading(false);
     };
@@ -54,6 +54,12 @@ export default function DoctorSearch() {
   const handleBookNow = (doctorId: string) => {
     router.push(`/booking?doctor=${encodeURIComponent(doctorId)}`);
   };
+  
+  const getAverageRating = (doctor: Doctor) => {
+      if (doctor.ratings.length === 0) return { avg: 0, count: 0};
+      const total = doctor.ratings.reduce((acc, curr) => acc + curr.rating, 0);
+      return { avg: total / doctor.ratings.length, count: doctor.ratings.length };
+  }
 
   return (
     <section id="doctors" className="w-full py-12 md:py-24 lg:py-32 bg-secondary">
@@ -104,27 +110,33 @@ export default function DoctorSearch() {
                 </Card>
               ))
             ) : (
-              filteredDoctors.map((doctor, index) => (
-                <Card key={doctor.id} className="text-center transition-all duration-300 hover:shadow-lg">
-                  <CardHeader>
-                    <div className="mx-auto w-24 h-24 rounded-full overflow-hidden border-4 border-primary/20">
-                       <Image src={`https://placehold.co/100x100.png?text=${doctor.name.split(' ').map(n=>n[0]).join('')}`} alt={`Avatar of ${doctor.name}`} width={100} height={100} data-ai-hint="doctor portrait" />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="px-2">
-                    <CardTitle className="text-lg">{doctor.name}</CardTitle>
-                    <p className="text-muted-foreground">{doctor.specialty}</p>
-                  </CardContent>
-                  <CardFooter className="justify-center pb-4">
-                     <Button variant="outline" className="w-full" onClick={() => handleBookNow(doctor.id)}>
-                      Book Now
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))
+              filteredDoctors.map((doctor) => {
+                const ratingInfo = getAverageRating(doctor);
+                return (
+                    <Card key={doctor.id} className="text-center transition-all duration-300 hover:shadow-lg flex flex-col">
+                      <CardHeader>
+                        <div className="mx-auto w-24 h-24 rounded-full overflow-hidden border-4 border-primary/20">
+                           <Image src={doctor.avatarUrl || `https://placehold.co/100x100.png?text=${doctor.name.split(' ').map(n=>n[0]).join('')}`} alt={`Avatar of ${doctor.name}`} width={100} height={100} data-ai-hint="doctor portrait" />
+                        </div>
+                      </CardHeader>
+                      <CardContent className="px-2 flex-grow">
+                        <CardTitle className="text-lg">{doctor.name}</CardTitle>
+                        <p className="text-muted-foreground">{doctor.specialty}</p>
+                        <div className="flex justify-center mt-2">
+                            <StarRating rating={ratingInfo.avg} count={ratingInfo.count} />
+                        </div>
+                      </CardContent>
+                      <CardFooter className="justify-center pb-4">
+                         <Button variant="outline" className="w-full" onClick={() => handleBookNow(doctor.id)}>
+                          Book Now
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                )
+              })
             )}
             {!loading && filteredDoctors.length === 0 && (
-              <p className="col-span-full text-center text-muted-foreground">No doctors found. Please ensure your Supabase connection is configured correctly.</p>
+              <p className="col-span-full text-center text-muted-foreground">No doctors found matching your criteria.</p>
             )}
           </div>
         </div>

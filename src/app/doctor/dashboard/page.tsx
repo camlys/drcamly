@@ -8,7 +8,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
-import { mockAppointments, mockPatients, Appointment, Patient, mockDoctors, timeSlots, Doctor, updateDoctor } from "@/lib/data";
+import { mockAppointments, mockPatients, Appointment, Patient, mockDoctors, timeSlots, Doctor, updateDoctor, Rating } from "@/lib/data";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,7 +20,7 @@ import { format, formatISO, startOfDay, subDays } from "date-fns";
 import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart, Cell, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { MessageSquare, UserCircle, Pencil, Camera, Video, Building, CreditCard } from "lucide-react";
+import { MessageSquare, UserCircle, Pencil, Camera, Video, Building, CreditCard, Star } from "lucide-react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { z } from "zod";
@@ -29,6 +29,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
 
@@ -80,7 +81,7 @@ export default function DoctorDashboard() {
     }
   }, [currentDoctor, form, isEditingProfile]);
   
-  const { todaysAppointments, doctorPatients, appointmentStats, weeklyAppointmentsChartData } = useMemo(() => {
+  const { todaysAppointments, doctorPatients, appointmentStats, weeklyAppointmentsChartData, averageRating } = useMemo(() => {
     const today = startOfDay(new Date());
 
     const doctorAppointments = appointments.filter(a => a.doctorId === currentDoctorId);
@@ -119,14 +120,22 @@ export default function DoctorDashboard() {
         appointments: weeklyData[date],
     }));
 
+    const docRatings = currentDoctor?.ratings || [];
+    const avgRating = docRatings.length > 0
+        ? docRatings.reduce((acc, r) => acc + r.rating, 0) / docRatings.length
+        : 0;
 
     return { 
         todaysAppointments: todaysAppts, 
         doctorPatients: patients, 
         appointmentStats: stats,
-        weeklyAppointmentsChartData: chartData
+        weeklyAppointmentsChartData: chartData,
+        averageRating: {
+            avg: avgRating,
+            count: docRatings.length
+        }
     };
-  }, [currentDoctorId, appointments]);
+  }, [currentDoctorId, appointments, currentDoctor]);
   
   const appointmentStatusChartData = [
       { name: 'Upcoming', value: appointmentStats.upcoming },
@@ -265,27 +274,37 @@ export default function DoctorDashboard() {
                     <CardTitle>Welcome, {currentDoctor?.name || 'Doctor'}!</CardTitle>
                     <CardDescription>Manage your patients and appointments.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    <div className="grid grid-cols-1 gap-6 md:col-span-2 sm:grid-cols-2">
-                        <Card className="bg-secondary/50">
-                            <CardHeader>
-                                <CardTitle className="text-lg">Patients</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-3xl font-bold">{doctorPatients.length}</p>
-                                <p className="text-muted-foreground">active patients</p>
-                            </CardContent>
-                        </Card>
-                         <Card className="bg-secondary/50">
-                            <CardHeader>
-                                <CardTitle className="text-lg">Today's Appointments</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-3xl font-bold">{todaysAppointments.length}</p>
-                                <p className="text-muted-foreground">scheduled</p>
-                            </CardContent>
-                        </Card>
-                    </div>
+                <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                     <Card className="bg-secondary/50">
+                        <CardHeader>
+                            <CardTitle className="text-lg">Patients</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-3xl font-bold">{doctorPatients.length}</p>
+                            <p className="text-muted-foreground">active patients</p>
+                        </CardContent>
+                    </Card>
+                     <Card className="bg-secondary/50">
+                        <CardHeader>
+                            <CardTitle className="text-lg">Today's Appointments</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-3xl font-bold">{todaysAppointments.length}</p>
+                            <p className="text-muted-foreground">scheduled</p>
+                        </CardContent>
+                    </Card>
+                     <Card className="bg-secondary/50">
+                        <CardHeader>
+                            <CardTitle className="text-lg">Overall Rating</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center gap-2">
+                               <p className="text-3xl font-bold">{averageRating.avg.toFixed(1)}</p>
+                               <Star className="w-7 h-7 text-yellow-400 fill-yellow-400" />
+                            </div>
+                            <p className="text-muted-foreground">from {averageRating.count} reviews</p>
+                        </CardContent>
+                    </Card>
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-lg">Quick Actions</CardTitle>
@@ -591,6 +610,34 @@ export default function DoctorDashboard() {
                             </TableBody>
                         </Table>
                       </div>
+                  </CardContent>
+              </Card>
+
+              <Card>
+                  <CardHeader>
+                      <CardTitle>Patient Feedback</CardTitle>
+                       <CardDescription>Reviews from your patients.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {currentDoctor && currentDoctor.ratings.length > 0 ? (
+                        <div className="space-y-4">
+                            {currentDoctor.ratings.map(rating => (
+                                <div key={rating.id} className="p-4 border rounded-lg">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="font-semibold">{rating.patientName}</span>
+                                        <div className="flex items-center">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star key={i} className={`h-5 w-5 ${i < rating.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'}`} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground italic">"{rating.feedback}"</p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-center text-muted-foreground">No feedback received yet.</p>
+                    )}
                   </CardContent>
               </Card>
         </div>

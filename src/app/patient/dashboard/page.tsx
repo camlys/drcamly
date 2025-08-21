@@ -9,14 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
 import Link from "next/link";
-import Image from "next/image";
-import { mockAppointments, Appointment, mockPatients, updatePatient, Patient } from "@/lib/data";
+import { mockAppointments, Appointment, mockPatients, updatePatient, Patient, addRating } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Cake, Phone, User, Pencil, CalendarIcon, Camera, Video, Building, CreditCard } from "lucide-react";
+import { MessageSquare, Cake, Phone, User, Pencil, CalendarIcon, Camera, Video, Building, CreditCard, Star } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -27,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Textarea } from "@/components/ui/textarea";
 
 const patientProfileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -36,8 +36,14 @@ const patientProfileSchema = z.object({
   phone: z.string().min(10, "Please enter a valid phone number."),
   avatarUrl: z.string().optional(),
 });
-
 type PatientProfileValues = z.infer<typeof patientProfileSchema>;
+
+
+const feedbackSchema = z.object({
+    rating: z.number().min(1, "Rating is required."),
+    feedback: z.string().min(10, "Feedback must be at least 10 characters.").max(500, "Feedback must be 500 characters or less."),
+});
+type FeedbackFormValues = z.infer<typeof feedbackSchema>;
 
 
 export default function PatientDashboard() {
@@ -52,6 +58,7 @@ export default function PatientDashboard() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedAppointmentForFeedback, setSelectedAppointmentForFeedback] = useState<Appointment | null>(null);
 
   const currentPatient = useMemo(() => patients.find(p => p.id === currentPatientId), [patients, currentPatientId]);
   
@@ -62,13 +69,18 @@ export default function PatientDashboard() {
     return { upcomingAppointments: upcoming, pastAppointments: past };
   }, [currentPatientId]);
 
-  const form = useForm<PatientProfileValues>({
+  const profileForm = useForm<PatientProfileValues>({
     resolver: zodResolver(patientProfileSchema),
+  });
+  
+  const feedbackForm = useForm<FeedbackFormValues>({
+      resolver: zodResolver(feedbackSchema),
+      defaultValues: { rating: 0, feedback: '' },
   });
 
   useEffect(() => {
     if (currentPatient) {
-      form.reset({
+      profileForm.reset({
         name: currentPatient.name,
         email: currentPatient.email,
         phone: currentPatient.phone,
@@ -78,7 +90,7 @@ export default function PatientDashboard() {
       });
       setImagePreview(currentPatient.avatarUrl || null);
     }
-  }, [currentPatient, form]);
+  }, [currentPatient, profileForm]);
 
 
   useEffect(() => {
@@ -92,9 +104,9 @@ export default function PatientDashboard() {
     return <div className="flex items-center justify-center min-h-[calc(100vh-14rem)]">Loading...</div>;
   }
 
-  const renderAppointmentRows = (appointments: Appointment[]) => {
+  const renderAppointmentRows = (appointments: Appointment[], isHistory: boolean) => {
       if (appointments.length === 0) {
-          return <TableRow><TableCell colSpan={6} className="text-center">No appointments found.</TableCell></TableRow>;
+          return <TableRow><TableCell colSpan={isHistory ? 7: 6} className="text-center">No appointments found.</TableCell></TableRow>;
       }
       return appointments.map(appt => (
           <TableRow key={appt.id}>
@@ -111,6 +123,58 @@ export default function PatientDashboard() {
               {appt.consultationFee > 0 ? `₹${appt.consultationFee.toFixed(2)}` : 'Free'}
             </TableCell>
             <TableCell><Badge variant={appt.status === 'Completed' ? 'secondary' : appt.status === 'Cancelled' ? 'destructive' : 'default'}>{appt.status}</Badge></TableCell>
+            {isHistory && (
+                <TableCell>
+                    {appt.status === 'Completed' && !appt.ratingId && (
+                       <Dialog onOpenChange={(isOpen) => !isOpen && feedbackForm.reset()}>
+                         <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => setSelectedAppointmentForFeedback(appt)}>
+                                Leave Feedback
+                            </Button>
+                         </DialogTrigger>
+                         <DialogContent>
+                             <DialogHeader>
+                                 <DialogTitle>Leave Feedback for Dr. {selectedAppointmentForFeedback?.doctorName}</DialogTitle>
+                             </DialogHeader>
+                             <Form {...feedbackForm}>
+                                 <form onSubmit={feedbackForm.handleSubmit(onFeedbackSubmit)} className="space-y-4">
+                                     <FormField
+                                         control={feedbackForm.control}
+                                         name="rating"
+                                         render={({ field }) => (
+                                             <FormItem>
+                                                 <FormLabel>Rating</FormLabel>
+                                                 <FormControl>
+                                                    <StarRatingInput value={field.value} onChange={field.onChange} />
+                                                 </FormControl>
+                                                 <FormMessage />
+                                             </FormItem>
+                                         )}
+                                     />
+                                      <FormField
+                                        control={feedbackForm.control}
+                                        name="feedback"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Feedback</FormLabel>
+                                                <FormControl>
+                                                    <Textarea placeholder="Share your experience..." {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                      />
+                                     <DialogFooter>
+                                         <Button type="submit">Submit Feedback</Button>
+                                     </DialogFooter>
+                                 </form>
+                             </Form>
+                         </DialogContent>
+                       </Dialog>
+                    )}
+                     {appt.ratingId && <span className="text-sm text-muted-foreground italic">Feedback submitted</span>}
+                </TableCell>
+            )}
           </TableRow>
       ));
   }
@@ -139,13 +203,36 @@ export default function PatientDashboard() {
       });
     }
   };
+
+  const onFeedbackSubmit = (data: FeedbackFormValues) => {
+      if (!selectedAppointmentForFeedback) return;
+      
+      addRating({
+          appointmentId: selectedAppointmentForFeedback.id,
+          doctorId: selectedAppointmentForFeedback.doctorId,
+          patientId: currentPatient.id,
+          patientName: currentPatient.name,
+          rating: data.rating,
+          feedback: data.feedback,
+      });
+
+      toast({
+          title: "Feedback Submitted!",
+          description: "Thank you for sharing your experience."
+      });
+      
+      feedbackForm.reset();
+      setSelectedAppointmentForFeedback(null);
+       // Force re-render to update the table
+      router.refresh();
+  };
   
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
-      form.setValue('avatarUrl', previewUrl);
+      profileForm.setValue('avatarUrl', previewUrl);
     }
   };
 
@@ -163,7 +250,7 @@ export default function PatientDashboard() {
                <Dialog open={isProfileDialogOpen} onOpenChange={(isOpen) => {
                   setIsProfileDialogOpen(isOpen);
                   if (!isOpen) {
-                    form.reset();
+                    profileForm.reset();
                     setImagePreview(currentPatient.avatarUrl || null);
                   }
                }}>
@@ -176,8 +263,8 @@ export default function PatientDashboard() {
                     <DialogHeader>
                       <DialogTitle>Edit Profile</DialogTitle>
                     </DialogHeader>
-                     <Form {...form}>
-                      <form onSubmit={form.handleSubmit(onProfileSubmit)} className="space-y-4 py-4">
+                     <Form {...profileForm}>
+                      <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4 py-4">
                         <div className="flex flex-col items-center gap-4">
                             <div className="relative">
                                 <Avatar className="w-24 h-24">
@@ -191,14 +278,14 @@ export default function PatientDashboard() {
                             </div>
                         </div>
 
-                        <FormField control={form.control} name="name" render={({ field }) => (
+                        <FormField control={profileForm.control} name="name" render={({ field }) => (
                           <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <FormField control={form.control} name="email" render={({ field }) => (
+                        <FormField control={profileForm.control} name="email" render={({ field }) => (
                           <FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                           <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
+                           <FormField control={profileForm.control} name="dateOfBirth" render={({ field }) => (
                               <FormItem className="flex flex-col">
                                 <FormLabel>Date of Birth</FormLabel>
                                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
@@ -217,7 +304,7 @@ export default function PatientDashboard() {
                                 <FormMessage />
                               </FormItem>
                             )} />
-                            <FormField control={form.control} name="gender" render={({ field }) => (
+                            <FormField control={profileForm.control} name="gender" render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Gender</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -232,7 +319,7 @@ export default function PatientDashboard() {
                               </FormItem>
                             )} />
                         </div>
-                        <FormField control={form.control} name="phone" render={({ field }) => (
+                        <FormField control={profileForm.control} name="phone" render={({ field }) => (
                           <FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <DialogFooter>
@@ -344,7 +431,7 @@ export default function PatientDashboard() {
                                   </TableRow>
                               </TableHeader>
                               <TableBody>
-                                  {renderAppointmentRows(upcomingAppointments)}
+                                  {renderAppointmentRows(upcomingAppointments, false)}
                               </TableBody>
                           </Table>
                         </div>
@@ -371,10 +458,11 @@ export default function PatientDashboard() {
                                       <TableHead>Type</TableHead>
                                       <TableHead>Fee</TableHead>
                                       <TableHead>Status</TableHead>
+                                      <TableHead>Action</TableHead>
                                   </TableRow>
                               </TableHeader>
                               <TableBody>
-                                  {renderAppointmentRows(pastAppointments)}
+                                  {renderAppointmentRows(pastAppointments, true)}
                               </TableBody>
                           </Table>
                         </div>
@@ -386,4 +474,24 @@ export default function PatientDashboard() {
       </main>
     </div>
   );
+}
+
+const StarRatingInput = ({ value, onChange }: { value: number, onChange: (value: number) => void}) => {
+    const [hoverValue, setHoverValue] = useState<number | undefined>(undefined);
+    return (
+        <div className="flex items-center gap-1">
+            {[1,2,3,4,5].map(star => (
+                <Star
+                    key={star}
+                    className={cn(
+                        "h-6 w-6 cursor-pointer",
+                        (hoverValue || value) >= star ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground"
+                    )}
+                    onClick={() => onChange(star)}
+                    onMouseEnter={() => setHoverValue(star)}
+                    onMouseLeave={() => setHoverValue(undefined)}
+                />
+            ))}
+        </div>
+    )
 }
