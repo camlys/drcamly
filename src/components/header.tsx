@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Stethoscope, Menu, LogIn, User, LogOut, ChevronDown } from "lucide-react";
+import { Stethoscope, Menu, LogIn, User, LogOut, Bell, MessageSquare, CalendarCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -15,9 +15,61 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/auth-context";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
+import { mockNotifications, Notification } from "@/lib/data";
+import { useState, useMemo, useEffect } from "react";
+import { Badge } from "./ui/badge";
+import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
+
+function NotificationPanel({ notifications, onOpenChange }: { notifications: Notification[], onOpenChange: (open: boolean) => void }) {
+    return (
+       <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {notifications.length > 0 ? notifications.map(notif => (
+                <DropdownMenuItem key={notif.id} asChild className="cursor-pointer" onClick={() => onOpenChange(false)}>
+                    <Link href={notif.link} className="flex items-start gap-3 p-2">
+                        <div className="flex-shrink-0 mt-1">
+                            {notif.link.includes('chat') ? <MessageSquare className="w-4 h-4 text-primary" /> : <CalendarCheck className="w-4 h-4 text-primary" />}
+                        </div>
+                        <div className="flex-1">
+                            <p className={cn("text-sm", !notif.read && "font-semibold")}>{notif.message}</p>
+                            <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(notif.timestamp), { addSuffix: true })}</p>
+                        </div>
+                    </Link>
+                </DropdownMenuItem>
+            )) : (
+                <p className="p-4 text-sm text-center text-muted-foreground">No new notifications</p>
+            )}
+        </DropdownMenuContent>
+    );
+}
+
 
 export default function Header() {
   const { authState, logout } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+
+  const currentUserNotifications = useMemo(() => {
+    if (!authState.isAuthenticated) return [];
+    const userId = authState.userType === 'doctor' ? 'doc1' : 'pat1';
+    return notifications
+        .filter(n => n.userId === userId)
+        .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }, [authState, notifications]);
+  
+  const unreadCount = useMemo(() => {
+    return currentUserNotifications.filter(n => !n.read).length;
+  }, [currentUserNotifications]);
+
+  const handleNotificationsOpenChange = (open: boolean) => {
+    if (open && unreadCount > 0) {
+        setNotifications(prev => 
+            prev.map(n => ({...n, read: true }))
+        );
+    }
+  }
+
 
   const navItems = [
     { label: "Departments", href: "/#departments" },
@@ -48,6 +100,17 @@ export default function Header() {
             </Link>
           ))}
           {authState.isAuthenticated ? (
+            <div className="flex items-center gap-4">
+              <DropdownMenu onOpenChange={handleNotificationsOpenChange}>
+                  <DropdownMenuTrigger asChild>
+                     <Button variant="ghost" size="icon" className="relative">
+                        <Bell className="h-5 w-5" />
+                        {unreadCount > 0 && <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 justify-center rounded-full p-0">{unreadCount}</Badge>}
+                     </Button>
+                  </DropdownMenuTrigger>
+                  <NotificationPanel notifications={currentUserNotifications} onOpenChange={handleNotificationsOpenChange} />
+              </DropdownMenu>
+
              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost">
@@ -67,6 +130,7 @@ export default function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

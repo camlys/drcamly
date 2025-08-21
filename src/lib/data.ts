@@ -78,6 +78,16 @@ export type Testimonial = {
     avatar: string;
 };
 
+export type Notification = {
+    id: string;
+    userId: string;
+    userType: 'patient' | 'doctor';
+    message: string;
+    link: string;
+    timestamp: string;
+    read: boolean;
+}
+
 
 export const timeSlots = [
     "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
@@ -209,6 +219,14 @@ export let mockTestimonials: Testimonial[] = [
     avatar: "https://placehold.co/80x80.png"
   },
 ];
+
+export let mockNotifications: Notification[] = [
+    { id: 'notif1', userId: 'pat1', userType: 'patient', message: "You have an unread message from Dr. Marcus Thorne.", link: '/chat', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), read: false },
+    { id: 'notif2', userId: 'pat1', userType: 'patient', message: "Your appointment with Dr. Evelyn Reed is in 1 week.", link: '/patient/dashboard', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), read: true },
+    { id: 'notif3', userId: 'doc1', userType: 'doctor', message: "Your appointment with Jane Smith has been confirmed.", link: '/doctor/dashboard', timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), read: true },
+    { id: 'notif4', userId: 'doc1', userType: 'doctor', message: "Patient John Doe has left you feedback.", link: '/doctor/dashboard', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), read: false },
+];
+
 
 // Function to add a new appointment
 export const addAppointment = (appointment: Omit<Appointment, 'id' | 'status'>) => {
