@@ -296,5 +296,3 @@ export const markNotificationsAsRead = async (userId: string) => {
         console.error('Error marking notifications as read', error);
     }
 }
-
-    

@@ -7,7 +7,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
-import { mockAppointments, mockPatients, Appointment, Patient, mockDoctors, timeSlots, Doctor, updateDoctor, Rating } from "@/lib/data";
+import { Appointment, Patient, Doctor, Rating, getDoctorById, getAppointmentsByFilter, getPatients, updateDoctor as apiUpdateDoctor, timeSlots } from "@/lib/data";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -50,13 +50,14 @@ export default function DoctorDashboard() {
   
   const currentDoctorId = "doc1";
   
-  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
-  const [doctors, setDoctors] = useState<Doctor[]>(mockDoctors);
+  const [currentDoctor, setCurrentDoctor] = useState<Doctor | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   
-  const currentDoctor = useMemo(() => doctors.find(d => d.id === currentDoctorId), [doctors, currentDoctorId]);
-
   const [selectedUnavailableTimes, setSelectedUnavailableTimes] = useState<string[]>([]);
   
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -66,6 +67,28 @@ export default function DoctorDashboard() {
   const form = useForm<DoctorProfileValues>({
     resolver: zodResolver(doctorProfileSchema),
   });
+
+  useEffect(() => {
+    const fetchData = async () => {
+        setLoading(true);
+        const doctor = await getDoctorById(currentDoctorId);
+        if (doctor) {
+            setCurrentDoctor(doctor);
+            const doctorAppointments = await getAppointmentsByFilter({ doctorId: doctor.id });
+            setAppointments(doctorAppointments);
+
+            const allPatients = await getPatients();
+            const patientIds = new Set(doctorAppointments.map(a => a.patientId));
+            setPatients(allPatients.filter(p => patientIds.has(p.id)));
+
+        }
+        setLoading(false);
+    }
+    if(authState.isAuthenticated && authState.userType === 'doctor') {
+        fetchData();
+    }
+  }, [authState, currentDoctorId]);
+
 
   useEffect(() => {
     if (currentDoctor) {
@@ -83,20 +106,15 @@ export default function DoctorDashboard() {
   const { todaysAppointments, doctorPatients, appointmentStats, weeklyAppointmentsChartData, averageRating } = useMemo(() => {
     const today = startOfDay(new Date());
 
-    const doctorAppointments = appointments.filter(a => a.doctorId === currentDoctorId);
-
-    const todaysAppts = doctorAppointments.filter(a => {
+    const todaysAppts = appointments.filter(a => {
         const apptDate = startOfDay(new Date(a.date));
         return apptDate.getTime() === today.getTime();
     });
-    
-    const patientIds = new Set(doctorAppointments.map(a => a.patientId));
-    const patients = mockPatients.filter(p => patientIds.has(p.id));
-    
+        
     const stats = {
-      upcoming: doctorAppointments.filter(a => a.status === 'Upcoming').length,
-      completed: doctorAppointments.filter(a => a.status === 'Completed').length,
-      cancelled: doctorAppointments.filter(a => a.status === 'Cancelled').length,
+      upcoming: appointments.filter(a => a.status === 'Upcoming').length,
+      completed: appointments.filter(a => a.status === 'Completed').length,
+      cancelled: appointments.filter(a => a.status === 'Cancelled').length,
     };
     
     const weeklyData: { [key: string]: number } = {};
@@ -106,7 +124,7 @@ export default function DoctorDashboard() {
         weeklyData[formattedDate] = 0;
     }
 
-    doctorAppointments.forEach(appt => {
+    appointments.forEach(appt => {
         const apptDate = startOfDay(new Date(appt.date));
         if (apptDate >= subDays(today, 6) && apptDate <= today) {
             const formattedDate = format(apptDate, 'MMM d');
@@ -134,7 +152,7 @@ export default function DoctorDashboard() {
             count: docRatings.length
         }
     };
-  }, [currentDoctorId, appointments, currentDoctor]);
+  }, [appointments, currentDoctor, patients]);
   
   const appointmentStatusChartData = [
       { name: 'Upcoming', value: appointmentStats.upcoming },
@@ -185,31 +203,27 @@ export default function DoctorDashboard() {
         return;
     }
 
-    setDoctors(prevDoctors => {
-        return prevDoctors.map(doc => {
-            if(doc.id === currentDoctorId) {
-                const newUnavailability = [...doc.unavailability];
-                
-                selectedDates.forEach(date => {
-                    const dateString = formatISO(startOfDay(date), { representation: 'date' });
-                    const index = newUnavailability.findIndex(u => u.date === dateString);
+    const updatedUnavailability = [...(currentDoctor.unavailability || [])];
+     selectedDates.forEach(date => {
+        const dateString = formatISO(startOfDay(date), { representation: 'date' });
+        const index = updatedUnavailability.findIndex(u => u.date === dateString);
 
-                    const timesToSet = selectedUnavailableTimes.length > 0 ? selectedUnavailableTimes : timeSlots;
+        const timesToSet = selectedUnavailableTimes.length > 0 ? selectedUnavailableTimes : timeSlots;
 
-                    if (index > -1) {
-                        const existingTimes = newUnavailability[index].times;
-                        const updatedTimes = [...new Set([...existingTimes, ...timesToSet])];
-                        newUnavailability[index] = { date: dateString, times: updatedTimes };
-                    } else {
-                        newUnavailability.push({ date: dateString, times: timesToSet });
-                    }
-                });
-                
-                return { ...doc, unavailability: newUnavailability };
-            }
-            return doc;
-        });
+        if (index > -1) {
+            const existingTimes = updatedUnavailability[index].times;
+            const updatedTimes = [...new Set([...existingTimes, ...timesToSet])];
+            updatedUnavailability[index] = { date: dateString, times: updatedTimes };
+        } else {
+            updatedUnavailability.push({ date: dateString, times: timesToSet });
+        }
     });
+    
+    // Here you would call an API to update the doctor's unavailability
+    console.log("Updating unavailability:", updatedUnavailability);
+    if(currentDoctor) {
+        setCurrentDoctor({...currentDoctor, unavailability: updatedUnavailability});
+    }
 
     toast({
         title: "Unavailability Updated",
@@ -225,10 +239,14 @@ export default function DoctorDashboard() {
       avatarUrl: imagePreview || data.avatarUrl,
     };
     
-    const { success, newDoctorsList } = updateDoctor(currentDoctor.id, updatedDetails);
+    const { success, newDoctorsList } = apiUpdateDoctor(currentDoctor.id, updatedDetails);
 
     if(success) {
-      setDoctors(newDoctorsList);
+      // Note: In a real app, the list update would come from the backend response/re-fetch.
+      // For mock, we are directly setting state.
+      const updatedDoctor = newDoctorsList.find(d => d.id === currentDoctorId);
+      if(updatedDoctor) setCurrentDoctor(updatedDoctor);
+      
       toast({
         title: "Profile Updated",
         description: "Your professional information has been successfully updated.",
@@ -253,7 +271,7 @@ export default function DoctorDashboard() {
   };
 
 
-  if (authState.loading || !authState.isAuthenticated || authState.userType !== 'doctor') {
+  if (loading || authState.loading || !authState.isAuthenticated || authState.userType !== 'doctor') {
     return <div className="flex items-center justify-center min-h-[calc(100vh-14rem)]">Loading...</div>;
   }
   
@@ -644,5 +662,3 @@ export default function DoctorDashboard() {
     </div>
   );
 }
-
-    

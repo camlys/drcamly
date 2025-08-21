@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { mockConversations, mockMessages, ChatConversation, ChatMessage, mockDoctors, mockPatients } from '@/lib/data';
+import { ChatConversation, ChatMessage, Doctor, Patient, getConversations, getMessages, addMessage, markMessagesAsRead, getDoctorById, getPatientById } from '@/lib/data';
 import { Send, Search, Check, CheckCheck, MessageSquare, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
@@ -15,60 +15,78 @@ import { format } from 'date-fns';
 
 export default function ChatInterface() {
     const { authState } = useAuth();
-    const [conversations, setConversations] = useState<ChatConversation[]>(mockConversations);
+    const [conversations, setConversations] = useState<ChatConversation[]>([]);
     const [selectedConversation, setSelectedConversation] = useState<ChatConversation | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const messageEndRef = useRef<HTMLDivElement>(null);
+    const [currentUser, setCurrentUser] = useState<Patient | Doctor | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const currentUser = useMemo(() => {
-        if (authState.userType === 'doctor') {
-            return mockDoctors.find(d => d.id === 'doc1');
-        } else {
-            return mockPatients.find(p => p.id === 'pat1');
-        }
-    }, [authState.userType]);
+    const currentUserId = authState.userType === 'doctor' ? 'doc1' : 'pat1';
 
 
     useEffect(() => {
-        if (selectedConversation) {
-            setMessages(mockMessages.filter(m => m.conversationId === selectedConversation.id));
-        } else {
-            setMessages([]);
+        const fetchInitialData = async () => {
+            if(!authState.isAuthenticated) return;
+            setLoading(true);
+            const user = authState.userType === 'doctor' 
+                ? await getDoctorById(currentUserId)
+                : await getPatientById(currentUserId);
+            setCurrentUser(user);
+
+            const convos = await getConversations(currentUserId);
+            setConversations(convos);
+            setLoading(false);
         }
+        fetchInitialData();
+    }, [authState, currentUserId]);
+
+
+    useEffect(() => {
+        const fetchMessages = async () => {
+            if (selectedConversation) {
+                const fetchedMessages = await getMessages(selectedConversation.id);
+                setMessages(fetchedMessages);
+            } else {
+                setMessages([]);
+            }
+        };
+        fetchMessages();
     }, [selectedConversation]);
 
     useEffect(() => {
         messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    const handleSendMessage = () => {
+    const handleSendMessage = async () => {
         if (newMessage.trim() === '' || !selectedConversation || !currentUser) return;
 
-        const newMsg: ChatMessage = {
-            id: `msg${Date.now()}`,
+        const messagePayload = {
             conversationId: selectedConversation.id,
             senderId: currentUser.id,
             text: newMessage,
-            timestamp: new Date().toISOString(),
-            read: false,
         };
 
-        setMessages(prev => [...prev, newMsg]);
-        
-        setConversations(prev => prev.map(c => 
-            c.id === selectedConversation.id ? { ...c, lastMessage: newMessage, lastMessageTimestamp: newMsg.timestamp } : c
-        ).sort((a,b) => new Date(b.lastMessageTimestamp).getTime() - new Date(a.lastMessageTimestamp).getTime()));
+        const { data: newMsg } = await addMessage(messagePayload);
 
-        setNewMessage('');
+        if(newMsg) {
+            setMessages(prev => [...prev, newMsg]);
+            
+            setConversations(prev => prev.map(c => 
+                c.id === selectedConversation.id ? { ...c, lastMessage: newMsg.text, lastMessageTimestamp: newMsg.timestamp } : c
+            ).sort((a,b) => new Date(b.lastMessageTimestamp).getTime() - new Date(a.lastMessageTimestamp).getTime()));
+
+            setNewMessage('');
+        }
     };
     
     const getInitials = (name: string) => {
         return name.split(' ').map(n => n[0]).join('');
     }
     
-    if (!currentUser) {
+    if (loading || !currentUser) {
         return <div className="flex items-center justify-center h-full"><p>Loading chat...</p></div>;
     }
 
@@ -78,7 +96,7 @@ export default function ChatInterface() {
 
     const handleSelectConversation = (conversation: ChatConversation) => {
         setSelectedConversation(conversation);
-        setMessages(prev => prev.map(m => m.senderId !== currentUser.id ? { ...m, read: true } : m));
+        markMessagesAsRead(conversation.id, currentUser.id);
         setConversations(prev => prev.map(c => c.id === conversation.id ? { ...c, unreadCount: 0 } : c));
     };
 
