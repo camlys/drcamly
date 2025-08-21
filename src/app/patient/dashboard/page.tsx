@@ -34,12 +34,7 @@ export default function PatientDashboard() {
   }, [authState, router]);
 
   if (!authState.isAuthenticated || authState.userType !== 'patient') {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
-
-  const handleLogout = () => {
-    logout();
-    router.push('/');
+    return <div className="flex items-center justify-center min-h-[calc(100vh-14rem)]">Loading...</div>;
   }
 
   const renderAppointmentRows = (appointments: Appointment[]) => {
@@ -57,15 +52,12 @@ export default function PatientDashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-       <header className="bg-card border-b p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-primary">Patient Dashboard</h1>
-           <Button variant="outline" onClick={handleLogout}>Logout</Button>
-        </div>
-      </header>
+    <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-background">
       <main className="flex-1 container mx-auto p-4 md:p-6 lg:p-8">
         <div className="grid gap-6">
+            <div className="flex justify-between items-center">
+              <h1 className="text-3xl font-bold text-primary">Patient Dashboard</h1>
+            </div>
             <Card>
                 <CardHeader>
                     <CardTitle>Welcome, {mockAppointments.find(a => a.patientId === currentPatientId)?.patientName || 'Patient'}!</CardTitle>
