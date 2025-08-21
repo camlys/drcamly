@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,6 +60,8 @@ export default function PatientDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedAppointmentForFeedback, setSelectedAppointmentForFeedback] = useState<Appointment | null>(null);
   const [timeRemaining, setTimeRemaining] = useState('');
+  const [alarmPlayed, setAlarmPlayed] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
 
   const currentPatient = useMemo(() => patients.find(p => p.id === currentPatientId), [patients, currentPatientId]);
@@ -75,6 +77,11 @@ export default function PatientDashboard() {
     if (upcomingAppointments.length > 0) {
       const nextAppointment = upcomingAppointments[0];
       const appointmentDateTime = new Date(`${nextAppointment.date.slice(0, 10)}T${convertTimeTo24Hour(nextAppointment.time)}`);
+      
+      if (nextAppointment.id !== localStorage.getItem('lastAlarmAppointmentId')) {
+          setAlarmPlayed(false);
+      }
+
 
       const calculateTimeRemaining = () => {
         const now = new Date();
@@ -84,6 +91,12 @@ export default function PatientDashboard() {
           setTimeRemaining("Your appointment is starting now.");
           clearInterval(interval);
           return;
+        }
+        
+        if (difference < 5 * 60 * 1000 && !alarmPlayed) {
+            audioRef.current?.play().catch(e => console.error("Audio play failed:", e));
+            setAlarmPlayed(true);
+            localStorage.setItem('lastAlarmAppointmentId', nextAppointment.id);
         }
 
         const days = Math.floor(difference / (1000 * 60 * 60 * 24));
@@ -99,7 +112,7 @@ export default function PatientDashboard() {
 
       return () => clearInterval(interval);
     }
-  }, [upcomingAppointments]);
+  }, [upcomingAppointments, alarmPlayed]);
 
   const convertTimeTo24Hour = (time: string) => {
     const [timePart, ampm] = time.split(' ');
@@ -289,6 +302,7 @@ export default function PatientDashboard() {
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-background">
       <main className="container p-4 mx-auto md:p-6 lg:p-8">
+        <audio ref={audioRef} src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" preload="auto" />
         <div className="grid gap-6">
             <div className="flex items-center justify-between">
               <h1 className="text-3xl font-bold text-primary">Patient Dashboard</h1>
