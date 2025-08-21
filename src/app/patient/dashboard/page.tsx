@@ -357,7 +357,7 @@ export default function PatientDashboard() {
                                     </FormControl>
                                   </PopoverTrigger>
                                   <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar mode="single" selected={field.value} onSelect={(date) => {field.onChange(date); setIsCalendarOpen(false);}} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
+                                    <Calendar mode="single" selected={field.value} onSelect={(date) => { if (date) { field.onChange(date); } setIsCalendarOpen(false); }} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
                                   </PopoverContent>
                                 </Popover>
                                 <FormMessage />
