@@ -47,7 +47,7 @@ export default function PatientSignupPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-14rem)] bg-background py-12">
+    <div className="flex items-center justify-center min-h-[calc(100vh-14rem)] bg-background py-24">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl font-bold tracking-tight text-center">Patient Sign Up</CardTitle>
