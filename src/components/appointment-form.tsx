@@ -223,7 +223,7 @@ function AppointmentFormContent() {
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField control={form.control} name="date" render={({ field }) => (
-                        <FormItem className="flex flex-col">
+                        <FormItem className="flex flex-col justify-end">
                           <FormLabel>Appointment Date</FormLabel>
                           <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                             <PopoverTrigger asChild>
