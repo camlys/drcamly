@@ -8,11 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Doctor, mockDoctors } from '@/lib/data';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+import { Doctor } from '@/lib/types';
+import { getDoctors } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Star } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
 
 const StarRating = ({ rating, count }: { rating: number, count: number }) => {
     return (
@@ -30,19 +30,33 @@ export default function DoctorSearch() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [specialties, setSpecialties] = useState<string[]>(['All']);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
-    const fetchDoctors = async () => {
+    const fetchAndSetDoctors = async () => {
       setLoading(true);
-      // Simulating fetch from mock data
-      setDoctors(mockDoctors);
-      const uniqueSpecialties = ["All", ...new Set(mockDoctors.map(d => d.specialty))];
+      const fetchedDoctors = await getDoctors();
+      setDoctors(fetchedDoctors);
+      const uniqueSpecialties = ["All", ...new Set(fetchedDoctors.map(d => d.specialty))];
       setSpecialties(uniqueSpecialties);
-
       setLoading(false);
     };
-    fetchDoctors();
+    fetchAndSetDoctors();
+
+    const channel = supabase
+      .channel('doctors-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'doctors' }, (payload) => {
+        console.log('Change received!', payload)
+        fetchAndSetDoctors();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ratings' }, (payload) => {
+        fetchAndSetDoctors();
+      })
+      .subscribe()
+    
+    return () => {
+        supabase.removeChannel(channel);
+    }
+
   }, []);
 
 
@@ -52,7 +66,7 @@ export default function DoctorSearch() {
   );
   
   const getAverageRating = (doctor: Doctor) => {
-      if (doctor.ratings.length === 0) return { avg: 0, count: 0};
+      if (!doctor.ratings || doctor.ratings.length === 0) return { avg: 0, count: 0};
       const total = doctor.ratings.reduce((acc, curr) => acc + curr.rating, 0);
       return { avg: total / doctor.ratings.length, count: doctor.ratings.length };
   }
@@ -77,11 +91,10 @@ export default function DoctorSearch() {
               placeholder="Search by doctor's name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onBlur={() => setSearchTerm('')}
-              className="flex-grow border-0 focus:ring-0"
+              className="flex-grow bg-card"
             />
             <Select onValueChange={setSpecialty} defaultValue="All" disabled={loading}>
-              <SelectTrigger className="w-full md:w-[240px] border-0 focus:ring-0" aria-label="Filter by specialty">
+              <SelectTrigger className="w-full md:w-[240px] bg-card" aria-label="Filter by specialty">
                 <SelectValue placeholder="Filter by specialty" />
               </SelectTrigger>
               <SelectContent>

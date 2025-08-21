@@ -13,8 +13,10 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
-import { mockTestimonials, addTestimonial, Testimonial } from '@/lib/data';
+import { useEffect, useState } from 'react';
+import { addTestimonial, getTestimonials } from '@/lib/data';
+import { Testimonial } from '@/lib/types';
+import { supabase } from '@/lib/supabaseClient';
 
 const testimonialSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters."),
@@ -25,7 +27,26 @@ type TestimonialFormValues = z.infer<typeof testimonialSchema>;
 
 export default function Testimonials() {
   const { toast } = useToast();
-  const [testimonials, setTestimonials] = useState<Testimonial[]>(mockTestimonials);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+        const data = await getTestimonials();
+        setTestimonials(data);
+    }
+    fetchTestimonials();
+    
+    const channel = supabase
+      .channel('testimonials-changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'testimonials' }, (payload) => {
+        setTestimonials(prev => [...prev, payload.new as Testimonial]);
+      })
+      .subscribe()
+    
+    return () => {
+        supabase.removeChannel(channel);
+    }
+  }, [])
 
   const form = useForm<TestimonialFormValues>({
       resolver: zodResolver(testimonialSchema),
@@ -35,14 +56,22 @@ export default function Testimonials() {
       }
   });
 
-  const onSubmit = (data: TestimonialFormValues) => {
-      const newTestimonial = addTestimonial(data);
-      setTestimonials(prev => [...prev, newTestimonial]);
-      toast({
-          title: "Thank you!",
-          description: "Your testimonial has been submitted successfully.",
-      });
-      form.reset();
+  const onSubmit = async (data: TestimonialFormValues) => {
+      const { error } = await addTestimonial(data);
+
+      if (error) {
+        toast({
+          title: "Error!",
+          description: "Could not submit your testimonial. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+            title: "Thank you!",
+            description: "Your testimonial has been submitted successfully.",
+        });
+        form.reset();
+      }
   }
 
 
@@ -65,7 +94,7 @@ export default function Testimonials() {
         >
           <CarouselContent>
             {testimonials.map((testimonial, index) => (
-              <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+              <CarouselItem key={testimonial.id || index} className="md:basis-1/2 lg:basis-1/3">
                 <div className="p-2">
                   <Card className="h-full">
                     <CardContent className="flex flex-col items-center justify-center p-6 text-center space-y-4">

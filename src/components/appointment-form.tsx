@@ -21,10 +21,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { mockDoctors, addAppointment, updateAppointment, mockPatients, timeSlots, mockAppointments } from "@/lib/data";
+import { addAppointment, updateAppointment, timeSlots, getAppointmentsByFilter, getDoctors, getPatientById, getDoctorById, getAppointments } from "@/lib/data";
 import { useAuth } from "@/context/auth-context";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { sendEmail } from "@/ai/flows/send-email-flow";
+import { Doctor, Appointment } from "@/lib/types";
 
 const appointmentFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -51,6 +52,9 @@ function AppointmentFormContent() {
   const { authState } = useAuth();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
+
   const rescheduleId = searchParams.get("rescheduleId");
   const isEditing = !!rescheduleId;
 
@@ -63,26 +67,37 @@ function AppointmentFormContent() {
   const selectedDate = form.watch("date");
 
   const selectedDoctor = useMemo(() => {
-    return mockDoctors.find(d => d.id === selectedDoctorId);
-  }, [selectedDoctorId]);
+    return doctors.find(d => d.id === selectedDoctorId);
+  }, [selectedDoctorId, doctors]);
 
   const availableTimeSlots = useMemo(() => {
     if (!selectedDoctor || !selectedDate) return [];
 
     const dateString = formatISO(startOfDay(selectedDate), { representation: 'date' });
-    const isoDateString = startOfDay(selectedDate).toISOString();
     
     // Get doctor's specific unavailable times for that day
-    const unavailableTimes = selectedDoctor.unavailability.find(u => u.date === dateString)?.times || [];
+    const unavailableTimes = selectedDoctor.unavailability?.find(u => u.date === dateString)?.times || [];
     
     // Get times already booked for that doctor on that day
-    const bookedTimes = mockAppointments
-        .filter(a => a.doctorId === selectedDoctorId && startOfDay(new Date(a.date)).toISOString() === isoDateString)
+    const bookedTimes = allAppointments
+        .filter(a => a.doctorId === selectedDoctorId && formatISO(startOfDay(new Date(a.date)), { representation: 'date' }) === dateString)
         .map(a => a.time);
 
     // Combine and filter the original time slots
     return timeSlots.filter(time => !unavailableTimes.includes(time) && !bookedTimes.includes(time));
-  }, [selectedDoctor, selectedDate, selectedDoctorId]);
+  }, [selectedDoctor, selectedDate, allAppointments]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+        const [fetchedDoctors, fetchedAppointments] = await Promise.all([
+            getDoctors(),
+            getAppointments()
+        ]);
+        setDoctors(fetchedDoctors);
+        setAllAppointments(fetchedAppointments);
+    }
+    fetchData();
+  }, [])
   
   useEffect(() => {
     // Reset time field if the available slots change and the current time is no longer valid
@@ -94,38 +109,49 @@ function AppointmentFormContent() {
 
 
   useEffect(() => {
-    const doctorId = searchParams.get("doctor");
-    if (doctorId && mockDoctors.some(d => d.id === doctorId)) {
-      form.setValue("doctor", doctorId);
-    }
+    const prefillForm = async () => {
+        const doctorId = searchParams.get("doctor");
+        if (doctorId && doctors.length > 0) {
+            form.setValue("doctor", doctorId);
+        }
 
-    if (rescheduleId) {
-        const appointmentToEdit = mockAppointments.find(a => a.id === rescheduleId);
-        if (appointmentToEdit) {
-            form.reset({
-                name: appointmentToEdit.patientName,
-                email: mockPatients.find(p => p.id === appointmentToEdit.patientId)?.email,
-                doctor: appointmentToEdit.doctorId,
-                date: new Date(appointmentToEdit.date),
-                time: appointmentToEdit.time,
-                consultationType: appointmentToEdit.consultationType,
-                message: appointmentToEdit.notes,
-            });
+        if (rescheduleId) {
+            const appointmentToEdit = allAppointments.find(a => a.id === rescheduleId);
+            if (appointmentToEdit) {
+                const patient = await getPatientById(appointmentToEdit.patientId);
+                form.reset({
+                    name: appointmentToEdit.patientName,
+                    email: patient?.email,
+                    doctor: appointmentToEdit.doctorId,
+                    date: new Date(appointmentToEdit.date),
+                    time: appointmentToEdit.time,
+                    consultationType: appointmentToEdit.consultationType,
+                    message: appointmentToEdit.notes,
+                });
+            }
         }
     }
-  }, [searchParams, form, rescheduleId]);
+    if(doctors.length > 0 || allAppointments.length > 0) {
+        prefillForm();
+    }
+  }, [searchParams, form, rescheduleId, doctors, allAppointments]);
 
   useEffect(() => {
-    if (authState.isAuthenticated && authState.userType === 'patient' && !isEditing) {
-      const patient = mockPatients[0]; 
-      form.setValue('name', patient.name);
-      form.setValue('email', patient.email);
+    const setPatientInfo = async () => {
+        if (authState.isAuthenticated && authState.userType === 'patient' && !isEditing) {
+            const patient = await getPatientById("pat1"); // Assuming pat1 for demo
+            if (patient) {
+                form.setValue('name', patient.name);
+                form.setValue('email', patient.email);
+            }
+        }
     }
+    setPatientInfo();
   }, [authState, form, isEditing]);
 
 
   async function onSubmit(data: AppointmentFormValues) {
-    const doctor = mockDoctors.find(d => d.id === data.doctor);
+    const doctor = doctors.find(d => d.id === data.doctor);
     if (!doctor) {
         toast({ title: "Error", description: "Selected doctor not found.", variant: "destructive" });
         return;
@@ -134,7 +160,7 @@ function AppointmentFormContent() {
     const patientId = authState.isAuthenticated && authState.userType === 'patient' ? "pat1" : "new-patient";
 
     if (isEditing && rescheduleId) {
-        updateAppointment(rescheduleId, {
+        await updateAppointment(rescheduleId, {
             patientName: data.name,
             patientId: patientId,
             doctorName: doctor.name,
@@ -167,7 +193,7 @@ function AppointmentFormContent() {
         });
         router.push('/patient/dashboard');
     } else {
-        addAppointment({
+        await addAppointment({
             patientName: data.name,
             patientId: patientId,
             doctorName: doctor.name,
@@ -232,7 +258,7 @@ function AppointmentFormContent() {
                         <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                           <FormControl><SelectTrigger><SelectValue placeholder="Select a doctor" /></SelectTrigger></FormControl>
                           <SelectContent>
-                            {mockDoctors.map(d => <SelectItem key={d.id} value={d.id}>{d.name} ({d.specialty})</SelectItem>)}
+                            {doctors.map(d => <SelectItem key={d.id} value={d.id}>{d.name} ({d.specialty})</SelectItem>)}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -265,7 +291,7 @@ function AppointmentFormContent() {
                               </FormControl>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={field.value} onSelect={(date) => { field.onChange(date); setIsCalendarOpen(false); }} disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))} initialFocus />
+                              <Calendar mode="single" selected={field.value} onSelect={(date) => { if(date) field.onChange(date); setIsCalendarOpen(false); }} disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))} initialFocus />
                             </PopoverContent>
                           </Popover>
                           <FormMessage />
