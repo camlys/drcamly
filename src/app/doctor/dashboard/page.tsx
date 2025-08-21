@@ -14,7 +14,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { format, formatISO, startOfDay } from "date-fns";
+import { format, formatISO, startOfDay, subDays } from "date-fns";
+import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart, Cell, ResponsiveContainer, Legend } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
 
 export default function DoctorDashboard() {
   const { authState } = useAuth();
@@ -32,19 +36,59 @@ export default function DoctorDashboard() {
 
   const [selectedUnavailableTimes, setSelectedUnavailableTimes] = useState<string[]>([]);
 
-  const { todaysAppointments, doctorPatients } = useMemo(() => {
+  const { todaysAppointments, doctorPatients, appointmentStats, weeklyAppointmentsChartData } = useMemo(() => {
     const today = startOfDay(new Date());
 
-    const todaysAppts = appointments.filter(a => {
+    const doctorAppointments = appointments.filter(a => a.doctorId === currentDoctorId);
+
+    const todaysAppts = doctorAppointments.filter(a => {
         const apptDate = startOfDay(new Date(a.date));
-        return a.doctorId === currentDoctorId && apptDate.getTime() === today.getTime();
+        return apptDate.getTime() === today.getTime();
     });
     
-    const patientIds = new Set(appointments.filter(a => a.doctorId === currentDoctorId).map(a => a.patientId));
+    const patientIds = new Set(doctorAppointments.map(a => a.patientId));
     const patients = mockPatients.filter(p => patientIds.has(p.id));
+    
+    const stats = {
+      upcoming: doctorAppointments.filter(a => a.status === 'Upcoming').length,
+      completed: doctorAppointments.filter(a => a.status === 'Completed').length,
+      cancelled: doctorAppointments.filter(a => a.status === 'Cancelled').length,
+    };
+    
+    const weeklyData: { [key: string]: number } = {};
+    for (let i = 6; i >= 0; i--) {
+        const date = subDays(today, i);
+        const formattedDate = format(date, 'MMM d');
+        weeklyData[formattedDate] = 0;
+    }
 
-    return { todaysAppointments: todaysAppts, doctorPatients: patients };
+    doctorAppointments.forEach(appt => {
+        const apptDate = startOfDay(new Date(appt.date));
+        if (apptDate >= subDays(today, 6) && apptDate <= today) {
+            const formattedDate = format(apptDate, 'MMM d');
+            weeklyData[formattedDate]++;
+        }
+    });
+
+    const chartData = Object.keys(weeklyData).map(date => ({
+        date,
+        appointments: weeklyData[date],
+    }));
+
+
+    return { 
+        todaysAppointments: todaysAppts, 
+        doctorPatients: patients, 
+        appointmentStats: stats,
+        weeklyAppointmentsChartData: chartData
+    };
   }, [currentDoctorId, appointments]);
+  
+  const appointmentStatusChartData = [
+      { name: 'Upcoming', value: appointmentStats.upcoming },
+      { name: 'Completed', value: appointmentStats.completed },
+      { name: 'Cancelled', value: appointmentStats.cancelled },
+  ];
 
 
   useEffect(() => {
@@ -157,6 +201,54 @@ export default function DoctorDashboard() {
                   </div>
                 </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Statistics</CardTitle>
+                <CardDescription>An overview of your appointments.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div>
+                      <h4 className="text-center font-semibold mb-2">Appointments Last 7 Days</h4>
+                      <ChartContainer config={{
+                        appointments: {
+                          label: 'Appointments',
+                          color: 'hsl(var(--primary))',
+                        },
+                      }} className="h-[250px] w-full">
+                        <BarChart data={weeklyAppointmentsChartData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
+                            <CartesianGrid vertical={false} />
+                            <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Bar dataKey="appointments" fill="var(--color-appointments)" radius={4} />
+                        </BarChart>
+                      </ChartContainer>
+                  </div>
+                   <div>
+                       <h4 className="text-center font-semibold mb-2">Appointment Status</h4>
+                      <ChartContainer config={{}} className="h-[250px] w-full">
+                        <PieChart>
+                          <Pie
+                            data={appointmentStatusChartData}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {appointmentStatusChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                          <Legend />
+                        </PieChart>
+                      </ChartContainer>
+                  </div>
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                   <CardHeader>
@@ -285,3 +377,5 @@ export default function DoctorDashboard() {
     </div>
   );
 }
+
+    
