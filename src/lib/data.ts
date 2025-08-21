@@ -252,21 +252,31 @@ export const updateAppointment = (appointmentId: string, updatedDetails: Omit<Ap
 // Function to update a patient's details
 export const updatePatient = (patientId: string, updatedDetails: Partial<Omit<Patient, 'id'>>) => {
     const patientIndex = mockPatients.findIndex(p => p.id === patientId);
-    if(patientIndex === -1) return null;
+    if(patientIndex === -1) return { success: false, newPatientsList: mockPatients };
 
-    const updatedPatient = { ...mockPatients[patientIndex], ...updatedDetails };
-    mockPatients[patientIndex] = updatedPatient;
-    return updatedPatient;
+    const newPatientsList = mockPatients.map((patient, index) => {
+        if(index === patientIndex) {
+            return { ...patient, ...updatedDetails };
+        }
+        return patient;
+    });
+    mockPatients = newPatientsList;
+    return { success: true, newPatientsList };
 }
 
 // Function to update a doctor's details
 export const updateDoctor = (doctorId: string, updatedDetails: Partial<Omit<Doctor, 'id' | 'unavailability' | 'ratings'>>) => {
     const doctorIndex = mockDoctors.findIndex(d => d.id === doctorId);
-    if(doctorIndex === -1) return null;
+    if(doctorIndex === -1) return { success: false, newDoctorsList: mockDoctors };
 
-    const updatedDoctor = { ...mockDoctors[doctorIndex], ...updatedDetails };
-    mockDoctors[doctorIndex] = updatedDoctor;
-    return updatedDoctor;
+    const newDoctorsList = mockDoctors.map((doctor, index) => {
+        if(index === doctorIndex) {
+            return { ...doctor, ...updatedDetails };
+        }
+        return doctor;
+    });
+    mockDoctors = newDoctorsList;
+    return { success: true, newDoctorsList };
 }
 
 export const addRating = (ratingData: Omit<Rating, 'id'>) => {
@@ -339,3 +349,5 @@ export let mockMessages: ChatMessage[] = [
     { id: 'msg4', conversationId: 'convo2', senderId: 'doc2', text: 'Hello, how can I help you?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString(), read: true },
     { id: 'msg5', conversationId: 'convo2', senderId: 'pat1', text: 'I have a follow-up question about my prescription.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), read: false }
 ];
+
+    

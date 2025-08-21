@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
@@ -238,16 +237,18 @@ export default function PatientDashboard() {
   }
   
   const onProfileSubmit = (data: PatientProfileValues) => {
+    if (!currentPatient) return;
+
     const updatedDetails = { 
       ...data, 
       dateOfBirth: data.dateOfBirth.toISOString(),
       avatarUrl: imagePreview || data.avatarUrl,
     };
     
-    const updated = updatePatient(currentPatient.id, updatedDetails);
+    const { success, newPatientsList } = updatePatient(currentPatient.id, updatedDetails);
     
-    if(updated) {
-      setPatients(prev => prev.map(p => p.id === currentPatient.id ? updated : p));
+    if(success) {
+      setPatients(newPatientsList);
       toast({
         title: "Profile Updated",
         description: "Your personal information has been successfully updated.",

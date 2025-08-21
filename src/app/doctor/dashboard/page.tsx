@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
@@ -226,10 +225,10 @@ export default function DoctorDashboard() {
       avatarUrl: imagePreview || data.avatarUrl,
     };
     
-    const updated = updateDoctor(currentDoctor.id, updatedDetails);
+    const { success, newDoctorsList } = updateDoctor(currentDoctor.id, updatedDetails);
 
-    if(updated) {
-      setDoctors(prev => prev.map(d => d.id === currentDoctor.id ? updated : d));
+    if(success) {
+      setDoctors(newDoctorsList);
       toast({
         title: "Profile Updated",
         description: "Your professional information has been successfully updated.",
@@ -645,3 +644,5 @@ export default function DoctorDashboard() {
     </div>
   );
 }
+
+    
