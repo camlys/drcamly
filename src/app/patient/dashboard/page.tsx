@@ -1,9 +1,10 @@
 
+
 "use client";
 
 import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
+import { format, differenceInYears } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
@@ -12,7 +13,7 @@ import { mockAppointments, Appointment, mockPatients } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Cake, Phone } from "lucide-react";
 
 export default function PatientDashboard() {
   const { authState } = useAuth();
@@ -34,7 +35,9 @@ export default function PatientDashboard() {
     }
   }, [authState, router]);
 
-  if (authState.loading || !authState.isAuthenticated || authState.userType !== 'patient') {
+  const currentPatient = useMemo(() => mockPatients.find(p => p.id === currentPatientId), [currentPatientId]);
+
+  if (authState.loading || !authState.isAuthenticated || authState.userType !== 'patient' || !currentPatient) {
     return <div className="flex items-center justify-center min-h-[calc(100vh-14rem)]">Loading...</div>;
   }
 
@@ -52,7 +55,7 @@ export default function PatientDashboard() {
       ));
   }
   
-  const currentPatient = useMemo(() => mockPatients.find(p => p.id === currentPatientId), [currentPatientId]);
+  const patientAge = differenceInYears(new Date(), new Date(currentPatient.dateOfBirth));
 
 
   return (
@@ -64,11 +67,22 @@ export default function PatientDashboard() {
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Welcome, {currentPatient?.name || 'Patient'}!</CardTitle>
+                    <CardTitle>Welcome, {currentPatient.name}!</CardTitle>
                     <CardDescription>This is your personal health dashboard.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <p>Here you can view your upcoming appointments, medical records, and messages.</p>
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                        <Cake className="w-5 h-5 text-primary" />
+                        <span>{patientAge} years old ({format(new Date(currentPatient.dateOfBirth), "MMMM d, yyyy")})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Phone className="w-5 h-5 text-primary" />
+                        <span>{currentPatient.phone}</span>
+                    </div>
+                     <div className="flex items-center gap-2">
+                       <span className="font-semibold text-primary">Gender:</span>
+                       <span>{currentPatient.gender}</span>
+                    </div>
                 </CardContent>
             </Card>
 

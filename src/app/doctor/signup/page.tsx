@@ -14,11 +14,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/auth-context";
+import { Textarea } from "@/components/ui/textarea";
 
 const signupFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Please enter a valid email address."),
   specialty: z.string({ required_error: "Please select a specialty." }),
+  bio: z.string().min(10, "Please provide a brief bio of at least 10 characters.").optional(),
   password: z.string()
     .min(8, "Password must be at least 8 characters.")
     .refine((password) => /[a-z]/.test(password), { message: "Password must contain at least one lowercase letter."})
@@ -41,6 +43,7 @@ export default function DoctorSignupPage() {
       name: "",
       email: "",
       password: "",
+      bio: "",
     },
   });
 
@@ -91,6 +94,13 @@ export default function DoctorSignupPage() {
                     <FormMessage />
                   </FormItem>
                 )} />
+              <FormField control={form.control} name="bio" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Professional Bio</FormLabel>
+                  <FormControl><Textarea placeholder="Briefly describe your experience and approach to patient care." className="resize-none" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
               <FormField control={form.control} name="password" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Password</FormLabel>

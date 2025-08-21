@@ -1,4 +1,5 @@
 
+
 export type Appointment = {
   id: string;
   patientName: string;
@@ -16,6 +17,7 @@ export type Doctor = {
     id: string;
     name: string;
     specialty: string;
+    bio?: string;
     unavailability: { date: string; times: string[] }[];
 };
 
@@ -23,6 +25,9 @@ export type Patient = {
     id: string;
     name: string;
     email: string;
+    dateOfBirth: string;
+    gender: string;
+    phone: string;
 };
 
 export type ChatParticipant = {
@@ -56,7 +61,7 @@ export const timeSlots = [
 ];
 
 export let mockDoctors: Doctor[] = [
-  { id: "doc1", name: "Dr. Evelyn Reed", specialty: "Cardiology", unavailability: [] },
+  { id: "doc1", name: "Dr. Evelyn Reed", specialty: "Cardiology", bio: "Dr. Reed is a board-certified cardiologist with over 15 years of experience. She is passionate about preventative care and patient education.", unavailability: [] },
   { id: "doc2", name: "Dr. Marcus Thorne", specialty: "Neurology", unavailability: [] },
   { id: "doc3", name: "Dr. Lena Petrova", specialty: "Pediatrics", unavailability: [] },
   { id: "doc4", name: "Dr. Kenji Tanaka", specialty: "Orthopedics", unavailability: [] },
@@ -67,9 +72,9 @@ export let mockDoctors: Doctor[] = [
 ];
 
 export const mockPatients: Patient[] = [
-    { id: "pat1", name: "John Doe", email: "john.doe@example.com" },
-    { id: "pat2", name: "Jane Smith", email: "jane.smith@example.com" },
-    { id: "pat3", name: "Peter Jones", email: "peter.jones@example.com" },
+    { id: "pat1", name: "John Doe", email: "john.doe@example.com", dateOfBirth: "1985-05-20", gender: "Male", phone: "(123) 456-7890" },
+    { id: "pat2", name: "Jane Smith", email: "jane.smith@example.com", dateOfBirth: "1992-09-15", gender: "Female", phone: "(234) 567-8901" },
+    { id: "pat3", name: "Peter Jones", email: "peter.jones@example.com", dateOfBirth: "1978-11-30", gender: "Male", phone: "(345) 678-9012" },
 ];
 
 

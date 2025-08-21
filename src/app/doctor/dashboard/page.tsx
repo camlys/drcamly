@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -18,7 +19,7 @@ import { format, formatISO, startOfDay, subDays } from "date-fns";
 import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart, Cell, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ChevronDown, MessageSquare } from "lucide-react";
+import { ChevronDown, MessageSquare, UserCircle } from "lucide-react";
 import Link from "next/link";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
@@ -191,22 +192,40 @@ export default function DoctorDashboard() {
                     <CardTitle>Welcome, {currentDoctor?.name || 'Doctor'}!</CardTitle>
                     <CardDescription>Manage your patients and appointments.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    <div>
-                      <h3 className="text-lg font-medium">Patients</h3>
-                      <p className="text-muted-foreground">{doctorPatients.length} active patients</p>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <Card className="bg-secondary/50">
+                            <CardHeader>
+                                <CardTitle className="text-lg">Patients</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-3xl font-bold">{doctorPatients.length}</p>
+                                <p className="text-muted-foreground">active patients</p>
+                            </CardContent>
+                        </Card>
+                         <Card className="bg-secondary/50">
+                            <CardHeader>
+                                <CardTitle className="text-lg">Today's Appointments</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-3xl font-bold">{todaysAppointments.length}</p>
+                                <p className="text-muted-foreground">scheduled</p>
+                            </CardContent>
+                        </Card>
                     </div>
-                     <div>
-                      <h3 className="text-lg font-medium">Today's Appointments</h3>
-                      <p className="text-muted-foreground">{todaysAppointments.length} appointments scheduled</p>
-                    </div>
-                    <div className="flex items-center">
-                      <Button asChild>
-                        <Link href="/chat"><MessageSquare className="mr-2 h-4 w-4" /> Go to Messages</Link>
-                      </Button>
-                    </div>
-                  </div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Quick Actions</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex flex-col gap-2">
+                           <Button asChild>
+                                <Link href="/chat"><MessageSquare className="mr-2 h-4 w-4" /> Go to Messages</Link>
+                           </Button>
+                           <Button variant="outline">
+                                <UserCircle className="mr-2 h-4 w-4" /> View My Profile
+                           </Button>
+                        </CardContent>
+                    </Card>
                 </CardContent>
             </Card>
 
@@ -371,6 +390,7 @@ export default function DoctorDashboard() {
                                 <TableRow>
                                     <TableHead>Patient</TableHead>
                                     <TableHead>Email</TableHead>
+                                    <TableHead>Phone</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -386,9 +406,10 @@ export default function DoctorDashboard() {
                                       </div>
                                     </TableCell>
                                     <TableCell>{patient.email}</TableCell>
+                                    <TableCell>{patient.phone || 'N/A'}</TableCell>
                                   </TableRow>
                                 )) : (
-                                  <TableRow><TableCell colSpan={2} className="text-center">No patients found.</TableCell></TableRow>
+                                  <TableRow><TableCell colSpan={3} className="text-center">No patients found.</TableCell></TableRow>
                                 )}
                             </TableBody>
                         </Table>
