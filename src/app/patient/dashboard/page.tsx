@@ -107,7 +107,7 @@ export default function PatientDashboard() {
                 </div>
             </TableCell>
             <TableCell className="font-medium">
-              {appt.consultationFee > 0 ? `$${appt.consultationFee.toFixed(2)}` : 'Free'}
+              {appt.consultationFee > 0 ? `₹${appt.consultationFee.toFixed(2)}` : 'Free'}
             </TableCell>
             <TableCell><Badge variant={appt.status === 'Completed' ? 'secondary' : appt.status === 'Cancelled' ? 'destructive' : 'default'}>{appt.status}</Badge></TableCell>
           </TableRow>

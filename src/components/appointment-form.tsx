@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
@@ -216,7 +217,7 @@ function AppointmentFormContent() {
                                 <span className="font-semibold">Consultation Fee</span>
                             </div>
                             <span className="font-bold text-lg">
-                                {selectedDoctor.consultationFee > 0 ? `$${selectedDoctor.consultationFee.toFixed(2)}` : 'Free'}
+                                {selectedDoctor.consultationFee > 0 ? `₹${selectedDoctor.consultationFee.toFixed(2)}` : 'Free'}
                             </span>
                         </div>
                     )}

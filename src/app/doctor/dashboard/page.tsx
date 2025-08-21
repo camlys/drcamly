@@ -343,7 +343,7 @@ export default function DoctorDashboard() {
                                                 )} />
                                                  <FormField control={form.control} name="consultationFee" render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>Consultation Fee ($)</FormLabel>
+                                                        <FormLabel>Consultation Fee (₹)</FormLabel>
                                                         <FormControl><Input type="number" {...field} /></FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -372,7 +372,7 @@ export default function DoctorDashboard() {
                                             <div>
                                             <h3 className="text-lg font-semibold">{currentDoctor.name}</h3>
                                             <p className="text-sm text-muted-foreground">{currentDoctor.specialty}</p>
-                                            <p className="text-sm font-medium mt-1">{currentDoctor.consultationFee > 0 ? `$${currentDoctor.consultationFee.toFixed(2)}` : 'Free Consultation'}</p>
+                                            <p className="text-sm font-medium mt-1">{currentDoctor.consultationFee > 0 ? `₹${currentDoctor.consultationFee.toFixed(2)}` : 'Free Consultation'}</p>
                                             </div>
                                         </div>
                                         <div>
@@ -473,7 +473,7 @@ export default function DoctorDashboard() {
                                         </div>
                                     </TableCell>
                                     <TableCell className="font-medium">
-                                        {appt.consultationFee > 0 ? `$${appt.consultationFee.toFixed(2)}` : 'Free'}
+                                        {appt.consultationFee > 0 ? `₹${appt.consultationFee.toFixed(2)}` : 'Free'}
                                     </TableCell>
                                     <TableCell>
                                       <Select 
