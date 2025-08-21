@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
   SheetClose
 } from "@/components/ui/sheet";
@@ -94,6 +96,9 @@ export default function Header() {
             </Button>
           </SheetTrigger>
           <SheetContent side="right">
+            <SheetHeader>
+               <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+            </SheetHeader>
             <div className="grid gap-4 py-6">
               <Link href="/" className="flex items-center gap-2 font-bold text-xl mb-4">
                 <Stethoscope className="h-6 w-6 text-primary" />
