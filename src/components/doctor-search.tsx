@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { mockDoctors, Doctor } from '@/lib/data';
+import { Doctor } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,16 +24,22 @@ export default function DoctorSearch() {
   useEffect(() => {
     const fetchDoctors = async () => {
       setLoading(true);
-      const { data, error } = await supabase.from('doctors').select('id, name, specialty');
-      
-      if (error) {
-        console.error("Error fetching doctors:", error);
-        setDoctors([]);
-      } else if (data) {
-        setDoctors(data);
-        const uniqueSpecialties = ["All", ...new Set(data.map(d => d.specialty))];
-        setSpecialties(uniqueSpecialties);
+      // Check if supabase client is actually configured
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        const { data, error } = await supabase.from('doctors').select('id, name, specialty');
+        
+        if (error) {
+          console.error("Error fetching doctors:", error);
+          setDoctors([]);
+        } else if (data) {
+          setDoctors(data);
+          const uniqueSpecialties = ["All", ...new Set(data.map(d => d.specialty))];
+          setSpecialties(uniqueSpecialties);
+        }
+      } else {
+         setDoctors([]);
       }
+
       setLoading(false);
     };
     fetchDoctors();
@@ -117,7 +123,7 @@ export default function DoctorSearch() {
               ))
             )}
             {!loading && filteredDoctors.length === 0 && (
-              <p className="col-span-full text-center text-muted-foreground">No doctors found matching your criteria.</p>
+              <p className="col-span-full text-center text-muted-foreground">No doctors found. Please ensure your Supabase connection is configured correctly.</p>
             )}
           </div>
         </div>
