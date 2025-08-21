@@ -1,3 +1,4 @@
+
 import { getSupabase } from './supabaseClient';
 import { Appointment, Doctor, Patient, Rating, Testimonial, ChatConversation, ChatMessage, Notification } from '@/lib/types';
 import { PostgrestError } from '@supabase/supabase-js';
@@ -14,9 +15,22 @@ const sampleDoctors: Doctor[] = [
     { id: 'doc3', name: 'Dr. Anika Sharma', specialty: 'Pediatrics', avatarUrl: 'https://i.pravatar.cc/150?img=3', consultationFee: 150, unavailability: [], ratings: [], bio: "Dr. Sharma provides compassionate care for children from infancy through adolescence." },
 ];
 
+const samplePatients: Patient[] = [
+    { id: 'pat1', name: 'Alex Johnson', email: 'alex.j@example.com', avatarUrl: 'https://i.pravatar.cc/150?img=6', dateOfBirth: '1985-05-20', gender: 'Male', phone: '123-456-7890' },
+];
+
+const sampleAppointments: Appointment[] = [
+    { id: 'apt1', patientId: 'pat1', patientName: 'Alex Johnson', doctorId: 'doc1', doctorName: 'Dr. Evelyn Reed', department: 'Cardiology', date: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString(), time: '10:00 AM', status: 'Upcoming', consultationType: 'Online', consultationFee: 250, notes: 'Follow-up regarding recent test results.' },
+];
+
 const sampleTestimonials: Testimonial[] = [
   { id: '1', name: 'John Doe', quote: 'Dr. Reed was incredibly attentive and thorough. I felt very well taken care of.', avatar: 'https://i.pravatar.cc/150?img=4' },
   { id: '2', name: 'Jane Smith', quote: 'The entire team at Dr.Camly is professional and friendly. The booking process was seamless.', avatar: 'https://i.pravatar.cc/150?img=5' },
+];
+
+const sampleNotifications: Notification[] = [
+    { id: 'notif1', userId: 'pat1', userType: 'patient', message: 'Your appointment with Dr. Reed has been confirmed.', link: '/patient/dashboard', timestamp: new Date().toISOString(), read: false },
+    { id: 'notif2', userId: 'pat1', userType: 'patient', message: 'Dr. Chen sent you a new message.', link: '/chat', timestamp: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(), read: true },
 ];
 
 
@@ -54,11 +68,18 @@ export const getDoctorById = async (id: string): Promise<Doctor | null> => {
     }
     return data[0];
 }
-export const updateDoctor = async (id: string, updates: Partial<Doctor>) => {
-    const supabase = getSupabase();
-    const { data, error } = await supabase.from('doctors').update(updates).eq('id', id).select().single();
-    if(error) console.error("Error updating doctor", error);
-    return { data, error };
+export const updateDoctor = (id: string, updates: Partial<Doctor>) => {
+    const doctorIndex = sampleDoctors.findIndex(d => d.id === id);
+    if(doctorIndex !== -1) {
+        const updatedDoctor = { ...sampleDoctors[doctorIndex], ...updates };
+        const newDoctorsList = [...sampleDoctors];
+        newDoctorsList[doctorIndex] = updatedDoctor;
+        // In a real app, this would be an API call to Supabase.
+        // For now, we just log it and return the updated mock data.
+        console.log("Mock updating doctor:", id, updates);
+        return { success: true, newDoctorsList };
+    }
+    return { success: false, newDoctorsList: sampleDoctors };
 }
 
 
@@ -72,34 +93,46 @@ export const getPatientById = async (id: string): Promise<Patient | null> => {
     const { data, error } = await fetchData<Patient>('patients', '*', { id });
      if (error || !data || data.length === 0) {
         if (error?.message === 'Supabase not configured') {
-            // This is a mock implementation for when Supabase is not configured.
-            const mockPatients: Patient[] = [
-                { id: 'pat1', name: 'Alex Johnson', email: 'alex.j@example.com', avatarUrl: 'https://i.pravatar.cc/150?img=6', dateOfBirth: '1985-05-20', gender: 'Male', phone: '123-456-7890' },
-            ];
-            return mockPatients.find(p => p.id === id) || null;
+            return samplePatients.find(p => p.id === id) || null;
         }
          console.error('Error fetching patient:', error);
         return null;
     }
     return data[0];
 }
-export const updatePatient = async (id: string, updates: Partial<Patient>) => {
-    const supabase = getSupabase();
-    const { data, error } = await supabase.from('patients').update(updates).eq('id', id).select().single();
-     if(error) console.error("Error updating patient", error);
-    return { data, error };
+export const updatePatient = (id: string, updates: Partial<Patient>) => {
+    const patientIndex = samplePatients.findIndex(p => p.id === id);
+    if(patientIndex !== -1) {
+        const updatedPatient = { ...samplePatients[patientIndex], ...updates };
+        const newPatientsList = [...samplePatients];
+        newPatientsList[patientIndex] = updatedPatient;
+        console.log("Mock updating patient:", id, updates);
+        return { success: true, newPatientsList };
+    }
+    return { success: false, newPatientsList: samplePatients };
 }
+
 
 // Appointments
 export const getAppointments = async (): Promise<Appointment[]> => {
     const { data, error } = await fetchData<Appointment>('appointments');
-    if (error) return [];
+    if (error) {
+        if(error.message === 'Supabase not configured') {
+            return sampleAppointments;
+        }
+        return [];
+    }
     return data || [];
 }
 
 export const getAppointmentsByFilter = async (filter: any): Promise<Appointment[]> => {
     const { data, error } = await fetchData<Appointment>('appointments', '*', filter);
     if (error) {
+        if(error.message === 'Supabase not configured') {
+            return sampleAppointments.filter(a =>
+                Object.keys(filter).every(key => (a as any)[key] === filter[key])
+            );
+        }
         console.error('Error fetching appointments by filter:', error);
         return [];
     }
@@ -242,6 +275,9 @@ export const getNotifications = async(userId: string): Promise<Notification[]> =
         .order('timestamp', { ascending: false });
 
     if(error) {
+        if(error.message === 'Supabase not configured') {
+            return sampleNotifications.filter(n => n.userId === userId);
+        }
         console.error('Error fetching notifications', error);
         return [];
     }
@@ -260,3 +296,5 @@ export const markNotificationsAsRead = async (userId: string) => {
         console.error('Error marking notifications as read', error);
     }
 }
+
+    

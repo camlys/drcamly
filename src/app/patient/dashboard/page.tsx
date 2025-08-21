@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
 import Link from "next/link";
-import { mockAppointments, Appointment, mockPatients, updatePatient, Patient, addRating } from "@/lib/data";
+import { Appointment, Patient, addRating, updatePatient as apiUpdatePatient, getPatientById, getAppointmentsByFilter } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -52,7 +52,8 @@ export default function PatientDashboard() {
   
   const currentPatientId = "pat1";
   
-  const [patients, setPatients] = useState<Patient[]>(mockPatients);
+  const [currentPatient, setCurrentPatient] = useState<Patient | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -61,16 +62,25 @@ export default function PatientDashboard() {
   const [timeRemaining, setTimeRemaining] = useState('');
   const [alarmPlayed, setAlarmPlayed] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  
+  useEffect(() => {
+    const fetchPatientData = async () => {
+        if(currentPatientId) {
+            const patient = await getPatientById(currentPatientId);
+            setCurrentPatient(patient);
+            const userAppointments = await getAppointmentsByFilter({ patientId: currentPatientId });
+            setAppointments(userAppointments);
+        }
+    };
+    fetchPatientData();
+  }, [currentPatientId]);
 
-
-  const currentPatient = useMemo(() => patients.find(p => p.id === currentPatientId), [patients, currentPatientId]);
   
   const { upcomingAppointments, pastAppointments } = useMemo(() => {
-    const userAppointments = mockAppointments.filter(a => a.patientId === currentPatientId);
-    const upcoming = userAppointments.filter(a => a.status === 'Upcoming').sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const past = userAppointments.filter(a => a.status !== 'Upcoming').sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const upcoming = appointments.filter(a => new Date(a.date) >= new Date()).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const past = appointments.filter(a => new Date(a.date) < new Date()).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return { upcomingAppointments: upcoming, pastAppointments: past };
-  }, [currentPatientId]);
+  }, [appointments]);
   
     useEffect(() => {
     if (upcomingAppointments.length > 0) {
@@ -147,7 +157,7 @@ export default function PatientDashboard() {
       });
       setImagePreview(currentPatient.avatarUrl || null);
     }
-  }, [currentPatient, profileForm]);
+  }, [currentPatient, profileForm, isProfileDialogOpen]);
 
 
   useEffect(() => {
@@ -183,7 +193,7 @@ export default function PatientDashboard() {
             {isHistory && (
                 <TableCell>
                     {appt.status === 'Completed' && !appt.ratingId && (
-                       <Dialog onOpenChange={(isOpen) => !isOpen && feedbackForm.reset()}>
+                       <Dialog onOpenChange={(isOpen) => { if (!isOpen) { feedbackForm.reset(); setSelectedAppointmentForFeedback(null); }}}>
                          <DialogTrigger asChild>
                             <Button variant="outline" size="sm" onClick={() => setSelectedAppointmentForFeedback(appt)}>
                                 Leave Feedback
@@ -245,10 +255,15 @@ export default function PatientDashboard() {
       avatarUrl: imagePreview || data.avatarUrl,
     };
     
-    const { success, newPatientsList } = updatePatient(currentPatient.id, updatedDetails);
+    // Using the imported function, which now returns the updated list
+    const { success, newPatientsList } = apiUpdatePatient(currentPatient.id, updatedDetails);
     
     if(success) {
-      setPatients(newPatientsList);
+      // Find the updated patient from the list and set it to state
+      const updatedPatient = newPatientsList.find(p => p.id === currentPatient.id);
+      if(updatedPatient) {
+        setCurrentPatient(updatedPatient);
+      }
       toast({
         title: "Profile Updated",
         description: "Your personal information has been successfully updated.",
@@ -309,10 +324,6 @@ export default function PatientDashboard() {
               <h1 className="text-3xl font-bold text-primary">Patient Dashboard</h1>
                <Dialog open={isProfileDialogOpen} onOpenChange={(isOpen) => {
                   setIsProfileDialogOpen(isOpen);
-                  if (!isOpen) {
-                    profileForm.reset();
-                    setImagePreview(currentPatient.avatarUrl || null);
-                  }
                }}>
                   <DialogTrigger asChild>
                     <Button variant="outline">
@@ -365,7 +376,7 @@ export default function PatientDashboard() {
                               </FormItem>
                             )} />
                             <FormField control={profileForm.control} name="gender" render={({ field }) => (
-                              <FormItem className="flex flex-col">
+                              <FormItem className="flex flex-col justify-end">
                                 <FormLabel>Gender</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                   <FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl>
