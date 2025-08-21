@@ -43,19 +43,25 @@ export default function DoctorSearch() {
     fetchAndSetDoctors();
 
     const supabase = getSupabase();
-    const channel = supabase
+    const doctorsChannel = supabase
       .channel('doctors-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'doctors' }, (payload) => {
-        console.log('Change received!', payload)
+        console.log('Doctors change received!', payload)
         fetchAndSetDoctors();
       })
+      .subscribe();
+      
+    const ratingsChannel = supabase
+      .channel('ratings-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ratings' }, (payload) => {
+        console.log('Ratings change received!', payload)
         fetchAndSetDoctors();
       })
-      .subscribe()
+      .subscribe();
     
     return () => {
-        supabase.removeChannel(channel);
+        supabase.removeChannel(doctorsChannel);
+        supabase.removeChannel(ratingsChannel);
     }
 
   }, []);
