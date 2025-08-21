@@ -14,13 +14,13 @@ import {
 } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/auth-context";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
-import { mockNotifications, Notification, mockDoctors, mockPatients } from "@/lib/data";
+import { getNotifications, Notification, getDoctorById, getPatientById, Doctor, Patient, markNotificationsAsRead } from "@/lib/data";
 import { useState, useMemo, useEffect } from "react";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { supabase } from "@/lib/supabaseClient";
 
 function NotificationPanel({ notifications, onOpenChange }: { notifications: Notification[], onOpenChange: (open: boolean) => void }) {
     return (
@@ -49,31 +49,57 @@ function NotificationPanel({ notifications, onOpenChange }: { notifications: Not
 
 export default function Header() {
   const { authState, logout } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [currentUser, setCurrentUser] = useState<Patient | Doctor | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   
-  const currentUser = useMemo(() => {
-    if (!authState.isAuthenticated) return null;
-    if (authState.userType === 'doctor') {
-      return mockDoctors.find(d => d.id === 'doc1');
+  const userId = authState.userType === 'doctor' ? 'doc1' : 'pat1';
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+        if (authState.isAuthenticated) {
+            let user = null;
+            if (authState.userType === 'doctor') {
+                user = await getDoctorById(userId);
+            } else {
+                user = await getPatientById(userId);
+            }
+            setCurrentUser(user);
+        } else {
+            setCurrentUser(null);
+        }
+    };
+    fetchUserData();
+  }, [authState, userId]);
+
+   useEffect(() => {
+    if (!authState.isAuthenticated) return;
+
+    const fetchNotifications = async () => {
+        const data = await getNotifications(userId);
+        setNotifications(data);
     }
-    return mockPatients.find(p => p.id === 'pat1');
-  }, [authState]);
+    fetchNotifications();
 
+    const channel = supabase
+      .channel(`notifications:${userId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `userId=eq.${userId}` }, (payload) => {
+        setNotifications(prev => [payload.new as Notification, ...prev]);
+      })
+      .subscribe()
+    
+    return () => {
+        supabase.removeChannel(channel);
+    }
 
-  const currentUserNotifications = useMemo(() => {
-    if (!authState.isAuthenticated) return [];
-    const userId = authState.userType === 'doctor' ? 'doc1' : 'pat1';
-    return notifications
-        .filter(n => n.userId === userId)
-        .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [authState, notifications]);
+  }, [authState.isAuthenticated, userId])
   
   const unreadCount = useMemo(() => {
-    return currentUserNotifications.filter(n => !n.read).length;
-  }, [currentUserNotifications]);
+    return notifications.filter(n => !n.read).length;
+  }, [notifications]);
 
   const handleNotificationsOpenChange = (open: boolean) => {
-    if (open && unreadCount > 0) {
+    if (!open && unreadCount > 0) {
+        markNotificationsAsRead(userId);
         setNotifications(prev => 
             prev.map(n => ({...n, read: true }))
         );
@@ -120,7 +146,7 @@ export default function Header() {
                         {unreadCount > 0 && <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 justify-center rounded-full p-0">{unreadCount}</Badge>}
                      </Button>
                   </DropdownMenuTrigger>
-                  <NotificationPanel notifications={currentUserNotifications} onOpenChange={handleNotificationsOpenChange} />
+                  <NotificationPanel notifications={notifications} onOpenChange={handleNotificationsOpenChange} />
               </DropdownMenu>
 
              <DropdownMenu>
