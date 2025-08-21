@@ -14,7 +14,7 @@ import { mockAppointments, Appointment, mockPatients, updatePatient, Patient } f
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Cake, Phone, User, Pencil, CalendarIcon, Camera, Video, Building } from "lucide-react";
+import { MessageSquare, Cake, Phone, User, Pencil, CalendarIcon, Camera, Video, Building, CreditCard } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -93,7 +93,7 @@ export default function PatientDashboard() {
 
   const renderAppointmentRows = (appointments: Appointment[]) => {
       if (appointments.length === 0) {
-          return <TableRow><TableCell colSpan={5} className="text-center">No appointments found.</TableCell></TableRow>;
+          return <TableRow><TableCell colSpan={6} className="text-center">No appointments found.</TableCell></TableRow>;
       }
       return appointments.map(appt => (
           <TableRow key={appt.id}>
@@ -105,6 +105,9 @@ export default function PatientDashboard() {
                     {appt.consultationType === 'Online' ? <Video className="h-4 w-4" /> : <Building className="h-4 w-4" />}
                     <span>{appt.consultationType}</span>
                 </div>
+            </TableCell>
+            <TableCell className="font-medium">
+              {appt.consultationFee > 0 ? `$${appt.consultationFee.toFixed(2)}` : 'Free'}
             </TableCell>
             <TableCell><Badge variant={appt.status === 'Completed' ? 'secondary' : appt.status === 'Cancelled' ? 'destructive' : 'default'}>{appt.status}</Badge></TableCell>
           </TableRow>
@@ -335,6 +338,7 @@ export default function PatientDashboard() {
                                       <TableHead>Doctor</TableHead>
                                       <TableHead>Department</TableHead>
                                       <TableHead>Type</TableHead>
+                                      <TableHead>Fee</TableHead>
                                       <TableHead>Status</TableHead>
                                   </TableRow>
                               </TableHeader>
@@ -364,6 +368,7 @@ export default function PatientDashboard() {
                                       <TableHead>Doctor</TableHead>
                                       <TableHead>Department</TableHead>
                                       <TableHead>Type</TableHead>
+                                      <TableHead>Fee</TableHead>
                                       <TableHead>Status</TableHead>
                                   </TableRow>
                               </TableHeader>

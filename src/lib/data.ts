@@ -11,6 +11,7 @@ export type Appointment = {
   time: string;
   status: "Upcoming" | "Completed" | "Cancelled";
   consultationType: "Online" | "In-Person";
+  consultationFee: number;
   notes?: string;
 };
 
@@ -20,6 +21,7 @@ export type Doctor = {
     specialty: string;
     avatarUrl?: string;
     bio?: string;
+    consultationFee: number;
     unavailability: { date: string; times: string[] }[];
 };
 
@@ -65,14 +67,14 @@ export const timeSlots = [
 ];
 
 export let mockDoctors: Doctor[] = [
-  { id: "doc1", name: "Dr. Evelyn Reed", specialty: "Cardiology", bio: "Dr. Reed is a board-certified cardiologist with over 15 years of experience. She is passionate about preventative care and patient education.", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc1" },
-  { id: "doc2", name: "Dr. Marcus Thorne", specialty: "Neurology", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc2" },
-  { id: "doc3", name: "Dr. Lena Petrova", specialty: "Pediatrics", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc3" },
-  { id: "doc4", name: "Dr. Kenji Tanaka", specialty: "Orthopedics", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc4" },
-  { id: "doc5", name: "Dr. Aisha Khan", specialty: "Ophthalmology", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc5" },
-  { id: "doc6", name: "Dr. Samuel Green", specialty: "General Practice", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc6" },
-  { id: "doc7", name: "Dr. Clara Oswald", specialty: "Cardiology", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc7" },
-  { id: "doc8", name: "Dr. Ben Carter", specialty: "Neurology", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc8" },
+  { id: "doc1", name: "Dr. Evelyn Reed", specialty: "Cardiology", consultationFee: 150, bio: "Dr. Reed is a board-certified cardiologist with over 15 years of experience. She is passionate about preventative care and patient education.", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc1" },
+  { id: "doc2", name: "Dr. Marcus Thorne", specialty: "Neurology", consultationFee: 200, unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc2" },
+  { id: "doc3", name: "Dr. Lena Petrova", specialty: "Pediatrics", consultationFee: 120, unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc3" },
+  { id: "doc4", name: "Dr. Kenji Tanaka", specialty: "Orthopedics", consultationFee: 180, unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc4" },
+  { id: "doc5", name: "Dr. Aisha Khan", specialty: "Ophthalmology", consultationFee: 160, unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc5" },
+  { id: "doc6", name: "Dr. Samuel Green", specialty: "General Practice", consultationFee: 0, unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc6" },
+  { id: "doc7", name: "Dr. Clara Oswald", specialty: "Cardiology", consultationFee: 150, unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc7" },
+  { id: "doc8", name: "Dr. Ben Carter", specialty: "Neurology", consultationFee: 200, unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc8" },
 ];
 
 export let mockPatients: Patient[] = [
@@ -94,6 +96,7 @@ export let mockAppointments: Appointment[] = [
     time: "10:00 AM",
     status: "Upcoming",
     consultationType: "In-Person",
+    consultationFee: 150,
   },
   {
     id: "appt2",
@@ -107,6 +110,7 @@ export let mockAppointments: Appointment[] = [
     status: "Completed",
     notes: "Follow-up in 6 months.",
     consultationType: "In-Person",
+    consultationFee: 200,
   },
   {
     id: "appt3",
@@ -119,6 +123,7 @@ export let mockAppointments: Appointment[] = [
     time: "11:00 AM",
     status: "Upcoming",
     consultationType: "Online",
+    consultationFee: 150,
   },
   {
     id: "appt4",
@@ -131,6 +136,7 @@ export let mockAppointments: Appointment[] = [
     time: "09:00 AM",
     status: "Upcoming",
     consultationType: "In-Person",
+    consultationFee: 120,
   },
   {
     id: "appt5",
@@ -143,6 +149,7 @@ export let mockAppointments: Appointment[] = [
     time: "03:00 PM",
     status: "Upcoming",
     consultationType: "Online",
+    consultationFee: 120,
   },
   {
     id: "appt6",
@@ -156,6 +163,7 @@ export let mockAppointments: Appointment[] = [
     status: "Completed",
     notes: "Prescribed new medication.",
     consultationType: "In-Person",
+    consultationFee: 150,
   },
 ];
 

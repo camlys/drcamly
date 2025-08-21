@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, CreditCard } from "lucide-react";
 import { format, formatISO, startOfDay } from "date-fns";
 import Image from "next/image";
 
@@ -56,17 +56,18 @@ function AppointmentFormContent() {
   const selectedDoctorId = form.watch("doctor");
   const selectedDate = form.watch("date");
 
-  const availableTimeSlots = useMemo(() => {
-    if (!selectedDoctorId || !selectedDate) return [];
+  const selectedDoctor = useMemo(() => {
+    return mockDoctors.find(d => d.id === selectedDoctorId);
+  }, [selectedDoctorId]);
 
-    const doctor = mockDoctors.find(d => d.id === selectedDoctorId);
-    if (!doctor) return [];
+  const availableTimeSlots = useMemo(() => {
+    if (!selectedDoctor || !selectedDate) return [];
 
     const dateString = formatISO(startOfDay(selectedDate), { representation: 'date' });
     const isoDateString = startOfDay(selectedDate).toISOString();
     
     // Get doctor's specific unavailable times for that day
-    const unavailableTimes = doctor.unavailability.find(u => u.date === dateString)?.times || [];
+    const unavailableTimes = selectedDoctor.unavailability.find(u => u.date === dateString)?.times || [];
     
     // Get times already booked for that doctor on that day
     const bookedTimes = mockAppointments
@@ -75,7 +76,7 @@ function AppointmentFormContent() {
 
     // Combine and filter the original time slots
     return timeSlots.filter(time => !unavailableTimes.includes(time) && !bookedTimes.includes(time));
-  }, [selectedDoctorId, selectedDate]);
+  }, [selectedDoctor, selectedDate, selectedDoctorId]);
   
   useEffect(() => {
     // Reset time field if the available slots change and the current time is no longer valid
@@ -120,6 +121,7 @@ function AppointmentFormContent() {
         date: data.date.toISOString(),
         time: data.time,
         consultationType: data.consultationType,
+        consultationFee: doctor.consultationFee,
         notes: data.message,
     });
     
@@ -167,6 +169,19 @@ function AppointmentFormContent() {
                         <FormMessage />
                       </FormItem>
                     )} />
+
+                    {selectedDoctor && (
+                        <div className="p-3 rounded-md bg-secondary/50 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <CreditCard className="w-5 h-5 text-primary" />
+                                <span className="font-semibold">Consultation Fee</span>
+                            </div>
+                            <span className="font-bold text-lg">
+                                {selectedDoctor.consultationFee > 0 ? `$${selectedDoctor.consultationFee.toFixed(2)}` : 'Free'}
+                            </span>
+                        </div>
+                    )}
+                    
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField control={form.control} name="date" render={({ field }) => (
                         <FormItem className="flex flex-col">

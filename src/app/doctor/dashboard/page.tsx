@@ -20,7 +20,7 @@ import { format, formatISO, startOfDay, subDays } from "date-fns";
 import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart, Cell, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { MessageSquare, UserCircle, Pencil, Camera, Video, Building } from "lucide-react";
+import { MessageSquare, UserCircle, Pencil, Camera, Video, Building, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { z } from "zod";
@@ -35,6 +35,7 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
 const doctorProfileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   specialty: z.string().min(2, "Specialty is required."),
+  consultationFee: z.coerce.number().min(0, "Fee must be a positive number."),
   bio: z.string().optional(),
   avatarUrl: z.string().optional(),
 });
@@ -71,6 +72,7 @@ export default function DoctorDashboard() {
       form.reset({
         name: currentDoctor.name,
         specialty: currentDoctor.specialty,
+        consultationFee: currentDoctor.consultationFee,
         bio: currentDoctor.bio,
         avatarUrl: currentDoctor.avatarUrl,
       });
@@ -326,18 +328,27 @@ export default function DoctorDashboard() {
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
-                                            <FormField control={form.control} name="specialty" render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Specialty</FormLabel>
-                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                                        <SelectContent>
-                                                          {specialties.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )} />
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <FormField control={form.control} name="specialty" render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Specialty</FormLabel>
+                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                                            <SelectContent>
+                                                              {specialties.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )} />
+                                                 <FormField control={form.control} name="consultationFee" render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Consultation Fee ($)</FormLabel>
+                                                        <FormControl><Input type="number" {...field} /></FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )} />
+                                            </div>
                                             <FormField control={form.control} name="bio" render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>Professional Bio</FormLabel>
@@ -361,6 +372,7 @@ export default function DoctorDashboard() {
                                             <div>
                                             <h3 className="text-lg font-semibold">{currentDoctor.name}</h3>
                                             <p className="text-sm text-muted-foreground">{currentDoctor.specialty}</p>
+                                            <p className="text-sm font-medium mt-1">{currentDoctor.consultationFee > 0 ? `$${currentDoctor.consultationFee.toFixed(2)}` : 'Free Consultation'}</p>
                                             </div>
                                         </div>
                                         <div>
@@ -445,6 +457,7 @@ export default function DoctorDashboard() {
                                     <TableHead>Time</TableHead>
                                     <TableHead>Patient</TableHead>
                                     <TableHead>Type</TableHead>
+                                    <TableHead>Fee</TableHead>
                                     <TableHead className="w-[150px]">Status</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -458,6 +471,9 @@ export default function DoctorDashboard() {
                                             {appt.consultationType === 'Online' ? <Video className="h-4 w-4" /> : <Building className="h-4 w-4" />}
                                             <span>{appt.consultationType}</span>
                                         </div>
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                        {appt.consultationFee > 0 ? `$${appt.consultationFee.toFixed(2)}` : 'Free'}
                                     </TableCell>
                                     <TableCell>
                                       <Select 
@@ -476,7 +492,7 @@ export default function DoctorDashboard() {
                                     </TableCell>
                                   </TableRow>
                                 )) : (
-                                  <TableRow><TableCell colSpan={4} className="text-center">No appointments for today.</TableCell></TableRow>
+                                  <TableRow><TableCell colSpan={5} className="text-center">No appointments for today.</TableCell></TableRow>
                                 )}
                             </TableBody>
                         </Table>
