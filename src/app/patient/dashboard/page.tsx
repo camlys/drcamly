@@ -2,26 +2,53 @@
 
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format, differenceInYears } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
 import Link from "next/link";
-import { mockAppointments, Appointment, mockPatients } from "@/lib/data";
+import { mockAppointments, Appointment, mockPatients, updatePatient, Patient } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Cake, Phone } from "lucide-react";
+import { MessageSquare, Cake, Phone, User, Pencil, CalendarIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+
+const patientProfileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters."),
+  email: z.string().email("Please enter a valid email address."),
+  dateOfBirth: z.date({ required_error: "Your date of birth is required." }),
+  gender: z.string({ required_error: "Please select your gender." }),
+  phone: z.string().min(10, "Please enter a valid phone number."),
+});
+
+type PatientProfileValues = z.infer<typeof patientProfileSchema>;
+
 
 export default function PatientDashboard() {
   const { authState } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   
-  // Mocking a logged-in patient. In a real app, this would come from the auth state.
   const currentPatientId = "pat1";
+  
+  const [patients, setPatients] = useState<Patient[]>(mockPatients);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
 
+  const currentPatient = useMemo(() => patients.find(p => p.id === currentPatientId), [patients, currentPatientId]);
+  
   const { upcomingAppointments, pastAppointments } = useMemo(() => {
     const userAppointments = mockAppointments.filter(a => a.patientId === currentPatientId);
     const upcoming = userAppointments.filter(a => a.status === 'Upcoming').sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -29,13 +56,29 @@ export default function PatientDashboard() {
     return { upcomingAppointments: upcoming, pastAppointments: past };
   }, [currentPatientId]);
 
+  const form = useForm<PatientProfileValues>({
+    resolver: zodResolver(patientProfileSchema),
+  });
+
+  useEffect(() => {
+    if (currentPatient) {
+      form.reset({
+        name: currentPatient.name,
+        email: currentPatient.email,
+        phone: currentPatient.phone,
+        gender: currentPatient.gender,
+        dateOfBirth: new Date(currentPatient.dateOfBirth),
+      });
+    }
+  }, [currentPatient, form]);
+
+
   useEffect(() => {
     if (!authState.loading && (!authState.isAuthenticated || authState.userType !== 'patient')) {
       router.push('/patient/login');
     }
   }, [authState, router]);
 
-  const currentPatient = useMemo(() => mockPatients.find(p => p.id === currentPatientId), [currentPatientId]);
 
   if (authState.loading || !authState.isAuthenticated || authState.userType !== 'patient' || !currentPatient) {
     return <div className="flex items-center justify-center min-h-[calc(100vh-14rem)]">Loading...</div>;
@@ -50,27 +93,108 @@ export default function PatientDashboard() {
             <TableCell>{format(new Date(appt.date), "PPP")} at {appt.time}</TableCell>
             <TableCell>{appt.doctorName}</TableCell>
             <TableCell>{appt.department}</TableCell>
-            <TableCell><Badge variant={appt.status === 'Completed' ? 'secondary' : 'default'}>{appt.status}</Badge></TableCell>
+            <TableCell><Badge variant={appt.status === 'Completed' ? 'secondary' : appt.status === 'Cancelled' ? 'destructive' : 'default'}>{appt.status}</Badge></TableCell>
           </TableRow>
       ));
   }
   
+  const onProfileSubmit = (data: PatientProfileValues) => {
+    const updated = updatePatient(currentPatient.id, { ...data, dateOfBirth: data.dateOfBirth.toISOString() });
+    if(updated) {
+      setPatients(prev => prev.map(p => p.id === currentPatient.id ? updated : p));
+      toast({
+        title: "Profile Updated",
+        description: "Your personal information has been successfully updated.",
+      });
+      setIsProfileDialogOpen(false);
+    } else {
+       toast({
+        title: "Error",
+        description: "Could not update your profile.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const patientAge = differenceInYears(new Date(), new Date(currentPatient.dateOfBirth));
 
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-background">
-      <main className="flex-1 container mx-auto p-4 md:p-6 lg:p-8">
+      <main className="container p-4 mx-auto md:p-6 lg:p-8">
         <div className="grid gap-6">
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <h1 className="text-3xl font-bold text-primary">Patient Dashboard</h1>
+               <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <User className="w-4 h-4 mr-2" /> My Profile
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Edit Profile</DialogTitle>
+                    </DialogHeader>
+                     <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onProfileSubmit)} className="space-y-4 py-4">
+                        <FormField control={form.control} name="name" render={({ field }) => (
+                          <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="email" render={({ field }) => (
+                          <FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                           <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
+                              <FormItem className="flex flex-col">
+                                <FormLabel>Date of Birth</FormLabel>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <FormControl>
+                                      <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                        {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                        <CalendarIcon className="w-4 h-4 ml-auto opacity-50" />
+                                      </Button>
+                                    </FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
+                                  </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name="gender" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Gender</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="Male">Male</SelectItem>
+                                    <SelectItem value="Female">Female</SelectItem>
+                                    <SelectItem value="Other">Other</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                        </div>
+                        <FormField control={form.control} name="phone" render={({ field }) => (
+                          <FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <DialogFooter>
+                          <Button type="submit">Save Changes</Button>
+                        </DialogFooter>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
             </div>
             <Card>
                 <CardHeader>
                     <CardTitle>Welcome, {currentPatient.name}!</CardTitle>
                     <CardDescription>This is your personal health dashboard.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <CardContent className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
                     <div className="flex items-center gap-2">
                         <Cake className="w-5 h-5 text-primary" />
                         <span>{patientAge} years old ({format(new Date(currentPatient.dateOfBirth), "MMMM d, yyyy")})</span>
@@ -86,14 +210,14 @@ export default function PatientDashboard() {
                 </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <Card className="lg:col-span-2">
                     <CardHeader>
                         <CardTitle>Next Appointment</CardTitle>
                     </CardHeader>
                     <CardContent>
                        {upcomingAppointments.length > 0 ? (
-                           <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 rounded-lg bg-secondary">
+                           <div className="flex flex-col items-start justify-between p-4 rounded-lg bg-secondary md:flex-row md:items-center">
                                <div>
                                   <p className="text-xl font-bold">{upcomingAppointments[0].doctorName}</p>
                                   <p className="text-muted-foreground">{upcomingAppointments[0].department}</p>
@@ -104,7 +228,7 @@ export default function PatientDashboard() {
                                 </Button>
                            </div>
                        ) : (
-                           <div className="text-center p-4 rounded-lg bg-secondary">
+                           <div className="p-4 text-center rounded-lg bg-secondary">
                               <p>You have no upcoming appointments.</p>
                                <Button asChild className="mt-4">
                                   <Link href="/booking">Book a new appointment</Link>
@@ -120,7 +244,7 @@ export default function PatientDashboard() {
                         <CardDescription>Communicate with your doctors.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col items-center justify-center text-center">
-                       <MessageSquare className="w-12 h-12 text-muted-foreground mb-4" />
+                       <MessageSquare className="w-12 h-12 mb-4 text-muted-foreground" />
                        <p className="mb-4 text-muted-foreground">You have 2 unread messages.</p>
                        <Button asChild>
                           <Link href="/chat">View Messages</Link>
@@ -130,7 +254,7 @@ export default function PatientDashboard() {
             </div>
             
             <Tabs defaultValue="upcoming">
-              <TabsList className="grid w-full grid-cols-1 md:w-1/2 grid-cols-2 mx-auto">
+              <TabsList className="grid w-full grid-cols-1 mx-auto md:w-1/2 md:grid-cols-2">
                 <TabsTrigger value="upcoming">Upcoming Appointments</TabsTrigger>
                 <TabsTrigger value="history">Appointment History</TabsTrigger>
               </TabsList>
@@ -193,3 +317,5 @@ export default function PatientDashboard() {
     </div>
   );
 }
+
+    

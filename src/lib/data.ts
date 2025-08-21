@@ -71,7 +71,7 @@ export let mockDoctors: Doctor[] = [
   { id: "doc8", name: "Dr. Ben Carter", specialty: "Neurology", unavailability: [] },
 ];
 
-export const mockPatients: Patient[] = [
+export let mockPatients: Patient[] = [
     { id: "pat1", name: "John Doe", email: "john.doe@example.com", dateOfBirth: "1985-05-20", gender: "Male", phone: "(123) 456-7890" },
     { id: "pat2", name: "Jane Smith", email: "jane.smith@example.com", dateOfBirth: "1992-09-15", gender: "Female", phone: "(234) 567-8901" },
     { id: "pat3", name: "Peter Jones", email: "peter.jones@example.com", dateOfBirth: "1978-11-30", gender: "Male", phone: "(345) 678-9012" },
@@ -160,6 +160,27 @@ export const addAppointment = (appointment: Omit<Appointment, 'id' | 'status'>) 
   return newAppointment;
 };
 
+// Function to update a patient's details
+export const updatePatient = (patientId: string, updatedDetails: Omit<Patient, 'id'>) => {
+    const patientIndex = mockPatients.findIndex(p => p.id === patientId);
+    if(patientIndex === -1) return null;
+
+    const updatedPatient = { ...mockPatients[patientIndex], ...updatedDetails };
+    mockPatients[patientIndex] = updatedPatient;
+    return updatedPatient;
+}
+
+// Function to update a doctor's details
+export const updateDoctor = (doctorId: string, updatedDetails: Partial<Omit<Doctor, 'id' | 'unavailability'>>) => {
+    const doctorIndex = mockDoctors.findIndex(d => d.id === doctorId);
+    if(doctorIndex === -1) return null;
+
+    const updatedDoctor = { ...mockDoctors[doctorIndex], ...updatedDetails };
+    mockDoctors[doctorIndex] = updatedDoctor;
+    return updatedDoctor;
+}
+
+
 export let mockConversations: ChatConversation[] = [
     {
         id: 'convo1',
@@ -200,3 +221,5 @@ export let mockMessages: ChatMessage[] = [
     { id: 'msg4', conversationId: 'convo2', senderId: 'doc2', text: 'Hello, how can I help you?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString(), read: true },
     { id: 'msg5', conversationId: 'convo2', senderId: 'pat1', text: 'I have a follow-up question about my prescription.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), read: false }
 ];
+
+    

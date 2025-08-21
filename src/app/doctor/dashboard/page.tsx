@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
-import { mockAppointments, mockPatients, Appointment, Patient, mockDoctors, timeSlots, Doctor } from "@/lib/data";
+import { mockAppointments, mockPatients, Appointment, Patient, mockDoctors, timeSlots, Doctor, updateDoctor } from "@/lib/data";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,28 +19,62 @@ import { format, formatISO, startOfDay, subDays } from "date-fns";
 import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart, Cell, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ChevronDown, MessageSquare, UserCircle } from "lucide-react";
+import { ChevronDown, MessageSquare, UserCircle, Pencil } from "lucide-react";
 import Link from "next/link";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
+
+const doctorProfileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters."),
+  specialty: z.string().min(2, "Specialty is required."),
+  bio: z.string().optional(),
+});
+type DoctorProfileValues = z.infer<typeof doctorProfileSchema>;
+
+const specialties = ["Cardiology", "Neurology", "Pediatrics", "Orthopedics", "Ophthalmology", "General Practice"];
 
 export default function DoctorDashboard() {
   const { authState } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-
+  
   const currentDoctorId = "doc1";
   
   const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
   const [doctors, setDoctors] = useState<Doctor[]>(mockDoctors);
-  
   const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   
   const currentDoctor = useMemo(() => doctors.find(d => d.id === currentDoctorId), [doctors, currentDoctorId]);
 
   const [selectedUnavailableTimes, setSelectedUnavailableTimes] = useState<string[]>([]);
 
+  const form = useForm<DoctorProfileValues>({
+    resolver: zodResolver(doctorProfileSchema),
+    defaultValues: {
+      name: currentDoctor?.name,
+      specialty: currentDoctor?.specialty,
+      bio: currentDoctor?.bio,
+    },
+  });
+
+  useEffect(() => {
+    if (currentDoctor) {
+      form.reset({
+        name: currentDoctor.name,
+        specialty: currentDoctor.specialty,
+        bio: currentDoctor.bio,
+      });
+    }
+  }, [currentDoctor, form]);
+  
   const { todaysAppointments, doctorPatients, appointmentStats, weeklyAppointmentsChartData } = useMemo(() => {
     const today = startOfDay(new Date());
 
@@ -158,8 +192,6 @@ export default function DoctorDashboard() {
                     }
                 });
                 
-                console.log("Saving unavailability for", doc.name, newUnavailability);
-                
                 return { ...doc, unavailability: newUnavailability };
             }
             return doc;
@@ -172,6 +204,25 @@ export default function DoctorDashboard() {
     });
   }
 
+  const onProfileSubmit = (data: DoctorProfileValues) => {
+    if (!currentDoctor) return;
+    const updated = updateDoctor(currentDoctor.id, data);
+    if(updated) {
+      setDoctors(prev => prev.map(d => d.id === currentDoctor.id ? updated : d));
+      toast({
+        title: "Profile Updated",
+        description: "Your professional information has been successfully updated.",
+      });
+      setIsEditingProfile(false);
+    } else {
+       toast({
+        title: "Error",
+        description: "Could not update your profile.",
+        variant: "destructive"
+      });
+    }
+  };
+
 
   if (authState.loading || !authState.isAuthenticated || authState.userType !== 'doctor') {
     return <div className="flex items-center justify-center min-h-[calc(100vh-14rem)]">Loading...</div>;
@@ -183,9 +234,9 @@ export default function DoctorDashboard() {
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-background">
-      <main className="flex-1 container mx-auto p-4 md:p-6 lg:p-8">
+      <main className="container p-4 mx-auto md:p-6 lg:p-8">
         <div className="grid gap-6">
-          <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-primary">Doctor Dashboard</h1>
           </div>
             <Card>
@@ -193,8 +244,8 @@ export default function DoctorDashboard() {
                     <CardTitle>Welcome, {currentDoctor?.name || 'Doctor'}!</CardTitle>
                     <CardDescription>Manage your patients and appointments.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-6 md:col-span-2 sm:grid-cols-2">
                         <Card className="bg-secondary/50">
                             <CardHeader>
                                 <CardTitle className="text-lg">Patients</CardTitle>
@@ -222,34 +273,77 @@ export default function DoctorDashboard() {
                            <Button asChild>
                                 <Link href="/chat"><MessageSquare className="mr-2 h-4 w-4" /> Go to Messages</Link>
                            </Button>
-                           <Dialog>
+                           <Dialog onOpenChange={setIsEditingProfile.bind(null, false)}>
                             <DialogTrigger asChild>
                                <Button variant="outline">
-                                    <UserCircle className="mr-2 h-4 w-4" /> View My Profile
+                                    <UserCircle className="w-4 h-4 mr-2" /> View My Profile
                                </Button>
                              </DialogTrigger>
-                             <DialogContent className="sm:max-w-[425px]">
+                             <DialogContent className="sm:max-w-[480px]">
                                 <DialogHeader>
-                                    <DialogTitle>My Profile</DialogTitle>
-                                    <DialogDescription>Your professional information.</DialogDescription>
+                                    <DialogTitle>{isEditingProfile ? "Edit Profile" : "My Profile"}</DialogTitle>
+                                    <DialogDescription>{isEditingProfile ? "Update your professional information below." : "Your professional information."}</DialogDescription>
                                 </DialogHeader>
                                 {currentDoctor && (
-                                <div className="grid gap-4 py-4">
-                                  <div className="flex items-center gap-4">
-                                    <Avatar className="h-16 w-16">
-                                      <AvatarImage src={`https://i.pravatar.cc/80?u=${currentDoctor.id}`} />
-                                      <AvatarFallback>{getInitials(currentDoctor.name)}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                      <h3 className="text-lg font-semibold">{currentDoctor.name}</h3>
-                                      <p className="text-sm text-muted-foreground">{currentDoctor.specialty}</p>
+                                    isEditingProfile ? (
+                                    <Form {...form}>
+                                        <form onSubmit={form.handleSubmit(onProfileSubmit)} className="space-y-4 py-4">
+                                            <FormField control={form.control} name="name" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Full Name</FormLabel>
+                                                    <FormControl><Input {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )} />
+                                            <FormField control={form.control} name="specialty" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Specialty</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                                        <SelectContent>
+                                                          {specialties.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )} />
+                                            <FormField control={form.control} name="bio" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Professional Bio</FormLabel>
+                                                    <FormControl><Textarea placeholder="Describe your experience..." className="resize-none" {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )} />
+                                            <DialogFooter>
+                                                <Button type="button" variant="ghost" onClick={() => setIsEditingProfile(false)}>Cancel</Button>
+                                                <Button type="submit">Save Changes</Button>
+                                            </DialogFooter>
+                                        </form>
+                                    </Form>
+                                ) : (
+                                    <div className="grid gap-4 py-4">
+                                        <div className="flex items-center gap-4">
+                                            <Avatar className="w-16 h-16">
+                                            <AvatarImage src={`https://i.pravatar.cc/80?u=${currentDoctor.id}`} />
+                                            <AvatarFallback>{getInitials(currentDoctor.name)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                            <h3 className="text-lg font-semibold">{currentDoctor.name}</h3>
+                                            <p className="text-sm text-muted-foreground">{currentDoctor.specialty}</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h4 className="mb-1 font-semibold">Professional Bio</h4>
+                                            <p className="text-sm text-muted-foreground">{currentDoctor.bio || 'No bio provided.'}</p>
+                                        </div>
+                                        <DialogFooter className="sm:justify-start">
+                                           <Button onClick={() => setIsEditingProfile(true)}>
+                                                <Pencil className="w-4 h-4 mr-2" />
+                                                Edit Profile
+                                            </Button>
+                                        </DialogFooter>
                                     </div>
-                                  </div>
-                                  <div>
-                                    <h4 className="font-semibold mb-1">Professional Bio</h4>
-                                    <p className="text-sm text-muted-foreground">{currentDoctor.bio || 'No bio provided.'}</p>
-                                  </div>
-                                </div>
+                                    )
                                 )}
                              </DialogContent>
                            </Dialog>
@@ -263,9 +357,9 @@ export default function DoctorDashboard() {
                 <CardTitle>Statistics</CardTitle>
                 <CardDescription>An overview of your appointments.</CardDescription>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <CardContent className="grid grid-cols-1 gap-8 lg:grid-cols-2">
                   <div>
-                      <h4 className="text-center font-semibold mb-2">Appointments Last 7 Days</h4>
+                      <h4 className="mb-2 font-semibold text-center">Appointments Last 7 Days</h4>
                       <ChartContainer config={{
                         appointments: {
                           label: 'Appointments',
@@ -281,7 +375,7 @@ export default function DoctorDashboard() {
                       </ChartContainer>
                   </div>
                    <div>
-                       <h4 className="text-center font-semibold mb-2">Appointment Status</h4>
+                       <h4 className="mb-2 font-semibold text-center">Appointment Status</h4>
                       <ChartContainer config={{}} className="h-[250px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
@@ -307,7 +401,7 @@ export default function DoctorDashboard() {
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <Card>
                   <CardHeader>
                       <CardTitle>Today's Appointments</CardTitle>
@@ -357,17 +451,17 @@ export default function DoctorDashboard() {
                     <AccordionTrigger className="p-6">
                         <div className="flex flex-col items-start">
                             <CardTitle>Set Unavailability</CardTitle>
-                            <CardDescription className="text-left mt-1">Select dates and times you are unavailable.</CardDescription>
+                            <CardDescription className="mt-1 text-left">Select dates and times you are unavailable.</CardDescription>
                         </div>
                     </AccordionTrigger>
                     <AccordionContent className="p-6 pt-0">
                         <CardDescription className="mb-4">If no times are selected, you'll be marked as unavailable for the entire day for the chosen dates.</CardDescription>
-                        <div className="flex flex-col md:flex-row items-start gap-4">
+                        <div className="flex flex-col items-start gap-4 md:flex-row">
                            <Calendar
                               mode="multiple"
                               selected={selectedDates}
                               onSelect={setSelectedDates}
-                              className="rounded-md border"
+                              className="border rounded-md"
                               disabled={{ before: new Date() }}
                               numberOfMonths={1}
                             />
@@ -385,7 +479,7 @@ export default function DoctorDashboard() {
                                         </Label>
                                     </div>
                                 </div>
-                                <p className="text-sm text-muted-foreground mb-3">Select specific times to mark as unavailable for the chosen dates.</p>
+                                <p className="mb-3 text-sm text-muted-foreground">Select specific times to mark as unavailable for the chosen dates.</p>
                                 <div className="grid grid-cols-2 gap-2">
                                     {timeSlots.map(time => (
                                         <div key={time} className="flex items-center space-x-2">
@@ -450,3 +544,5 @@ export default function DoctorDashboard() {
     </div>
   );
 }
+
+    
