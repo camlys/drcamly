@@ -21,6 +21,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ChevronDown, MessageSquare, UserCircle } from "lucide-react";
 import Link from "next/link";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
 
@@ -221,9 +222,37 @@ export default function DoctorDashboard() {
                            <Button asChild>
                                 <Link href="/chat"><MessageSquare className="mr-2 h-4 w-4" /> Go to Messages</Link>
                            </Button>
-                           <Button variant="outline">
-                                <UserCircle className="mr-2 h-4 w-4" /> View My Profile
-                           </Button>
+                           <Dialog>
+                            <DialogTrigger asChild>
+                               <Button variant="outline">
+                                    <UserCircle className="mr-2 h-4 w-4" /> View My Profile
+                               </Button>
+                             </DialogTrigger>
+                             <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader>
+                                    <DialogTitle>My Profile</DialogTitle>
+                                    <DialogDescription>Your professional information.</DialogDescription>
+                                </DialogHeader>
+                                {currentDoctor && (
+                                <div className="grid gap-4 py-4">
+                                  <div className="flex items-center gap-4">
+                                    <Avatar className="h-16 w-16">
+                                      <AvatarImage src={`https://i.pravatar.cc/80?u=${currentDoctor.id}`} />
+                                      <AvatarFallback>{getInitials(currentDoctor.name)}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <h3 className="text-lg font-semibold">{currentDoctor.name}</h3>
+                                      <p className="text-sm text-muted-foreground">{currentDoctor.specialty}</p>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <h4 className="font-semibold mb-1">Professional Bio</h4>
+                                    <p className="text-sm text-muted-foreground">{currentDoctor.bio || 'No bio provided.'}</p>
+                                  </div>
+                                </div>
+                                )}
+                             </DialogContent>
+                           </Dialog>
                         </CardContent>
                     </Card>
                 </CardContent>
