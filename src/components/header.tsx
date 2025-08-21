@@ -125,20 +125,9 @@ export default function Header() {
                      </SheetClose>
                   </>
                 ) : (
-                  <>
-                    <SheetClose asChild>
-                      <Link href="/patient/login" className="block px-2 py-1 text-lg font-medium transition-colors hover:text-primary">Patient Login</Link>
-                    </SheetClose>
-                    <SheetClose asChild>
-                      <Link href="/doctor/login" className="block px-2 py-1 text-lg font-medium transition-colors hover:text-primary">Doctor Login</Link>
-                    </SheetClose>
-                    <SheetClose asChild>
-                      <Link href="/patient/signup" className="block px-2 py-1 text-lg font-medium transition-colors hover:text-primary">Patient Sign up</Link>
-                    </SheetClose>
-                    <SheetClose asChild>
-                      <Link href="/doctor/signup" className="block px-2 py-1 text-lg font-medium transition-colors hover:text-primary">Doctor Sign up</Link>
-                    </SheetClose>
-                  </>
+                  <SheetClose asChild>
+                    <Link href="/patient/login" className="block px-2 py-1 text-lg font-medium transition-colors hover:text-primary">Login / Sign Up</Link>
+                  </SheetClose>
                 )}
               </nav>
               <SheetClose asChild>
