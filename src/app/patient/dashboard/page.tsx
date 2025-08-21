@@ -49,6 +49,7 @@ export default function PatientDashboard() {
   
   const [patients, setPatients] = useState<Patient[]>(mockPatients);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -200,7 +201,7 @@ export default function PatientDashboard() {
                            <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
                               <FormItem className="flex flex-col">
                                 <FormLabel>Date of Birth</FormLabel>
-                                <Popover>
+                                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                                   <PopoverTrigger asChild>
                                     <FormControl>
                                       <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
@@ -210,7 +211,7 @@ export default function PatientDashboard() {
                                     </FormControl>
                                   </PopoverTrigger>
                                   <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
+                                    <Calendar mode="single" selected={field.value} onSelect={(date) => {field.onChange(date); setIsCalendarOpen(false);}} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
                                   </PopoverContent>
                                 </Popover>
                                 <FormMessage />
