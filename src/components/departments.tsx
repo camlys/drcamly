@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, BrainCircuit, Baby, Bone, Eye, Stethoscope } from 'lucide-react';
+import { Heart, BrainCircuit, Baby, Bone, Eye, Stethoscope, Layers, BrainCog, AirVent } from 'lucide-react';
 
 const departments = [
   { name: "Cardiology", description: "Expert care for your heart.", icon: Heart },
@@ -8,6 +8,9 @@ const departments = [
   { name: "Orthopedics", description: "Treating bones, joints, and muscles.", icon: Bone },
   { name: "Ophthalmology", description: "Advanced care for your vision.", icon: Eye },
   { name: "General Practice", description: "Your primary point of care.", icon: Stethoscope },
+  { name: "Dermatology", description: "Specialized skin care services.", icon: Layers },
+  { name: "Psychiatry", description: "Supporting your mental well-being.", icon: BrainCog },
+  { name: "Pulmonology", description: "Care for your respiratory system.", icon: AirVent },
 ];
 
 export default function Departments() {
