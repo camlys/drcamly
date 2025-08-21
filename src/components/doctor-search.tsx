@@ -50,10 +50,6 @@ export default function DoctorSearch() {
     doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (specialty === 'All' || doctor.specialty === specialty)
   );
-
-  const handleBookNow = (doctorId: string) => {
-    router.push(`/booking?doctor=${encodeURIComponent(doctorId)}`);
-  };
   
   const getAverageRating = (doctor: Doctor) => {
       if (doctor.ratings.length === 0) return { avg: 0, count: 0};
@@ -127,8 +123,8 @@ export default function DoctorSearch() {
                         </div>
                       </CardContent>
                       <CardFooter className="justify-center pb-4">
-                         <Button variant="outline" className="w-full" onClick={() => handleBookNow(doctor.id)}>
-                          Book Now
+                         <Button asChild variant="outline" className="w-full">
+                          <Link href={`/booking?doctor=${doctor.id}`}>Book Now</Link>
                         </Button>
                       </CardFooter>
                     </Card>
