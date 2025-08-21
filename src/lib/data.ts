@@ -70,7 +70,17 @@ export const getPatients = async (): Promise<Patient[]> => {
 }
 export const getPatientById = async (id: string): Promise<Patient | null> => {
     const { data, error } = await fetchData<Patient>('patients', '*', { id });
-     if (error || !data || data.length === 0) return null;
+     if (error || !data || data.length === 0) {
+        if (error?.message === 'Supabase not configured') {
+            // This is a mock implementation for when Supabase is not configured.
+            const mockPatients: Patient[] = [
+                { id: 'pat1', name: 'Alex Johnson', email: 'alex.j@example.com', avatarUrl: 'https://i.pravatar.cc/150?img=6', dateOfBirth: '1985-05-20', gender: 'Male', phone: '123-456-7890' },
+            ];
+            return mockPatients.find(p => p.id === id) || null;
+        }
+         console.error('Error fetching patient:', error);
+        return null;
+    }
     return data[0];
 }
 export const updatePatient = async (id: string, updates: Partial<Patient>) => {
