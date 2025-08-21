@@ -205,8 +205,7 @@ function AppointmentFormContent() {
                 </Form>
               </CardContent>
             </div>
-            <div className="hidden md:block relative">
-              <Image src="https://placehold.co/600x800.png" alt="Doctor consulting a patient" data-ai-hint="doctor patient" fill className="object-cover" />
+            <div className="hidden md:block relative bg-gradient-radial from-blue-300 to-green-200">
             </div>
           </div>
         </Card>
