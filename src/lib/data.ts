@@ -72,6 +72,12 @@ export type ChatConversation = {
     unreadCount: number;
 }
 
+export type Testimonial = {
+    name: string;
+    quote: string;
+    avatar: string;
+};
+
 
 export const timeSlots = [
     "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
@@ -186,6 +192,24 @@ export let mockAppointments: Appointment[] = [
   },
 ];
 
+export let mockTestimonials: Testimonial[] = [
+  {
+    name: "Sarah L.",
+    quote: "The care I received at Dr.Camly was exceptional. The doctors and nurses were incredibly attentive and made me feel comfortable throughout my stay. I can't thank them enough.",
+    avatar: "https://placehold.co/80x80.png"
+  },
+  {
+    name: "Michael B.",
+    quote: "Booking an appointment online was so easy and convenient. The staff was professional and the facilities are top-notch. Highly recommend Dr.Camly.",
+    avatar: "https://placehold.co/80x80.png"
+  },
+  {
+    name: "Jessica P.",
+    quote: "Dr. Reed is a fantastic cardiologist. She took the time to explain everything to me and answered all my questions. I feel like I'm in great hands at Dr.Camly.",
+    avatar: "https://placehold.co/80x80.png"
+  },
+];
+
 // Function to add a new appointment
 export const addAppointment = (appointment: Omit<Appointment, 'id' | 'status'>) => {
   const newAppointment: Appointment = {
@@ -245,6 +269,15 @@ export const addRating = (ratingData: Omit<Rating, 'id'>) => {
     }
     
     return newRating;
+}
+
+export const addTestimonial = (testimonialData: Omit<Testimonial, 'avatar'>) => {
+    const newTestimonial: Testimonial = {
+        ...testimonialData,
+        avatar: `https://placehold.co/80x80.png?text=${testimonialData.name.split(' ').map(n=>n[0]).join('')}`
+    }
+    mockTestimonials.push(newTestimonial);
+    return newTestimonial;
 }
 
 
