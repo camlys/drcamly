@@ -1,19 +1,9 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 
 export default function Hero() {
   return (
-    <section id="home" className="relative w-full h-[80vh] min-h-[500px] flex items-center">
-      <div className="absolute inset-0 bg-primary/20 z-10" />
-      <Image
-        src="https://placehold.co/1600x900.png"
-        alt="A modern and bright hospital lobby"
-        data-ai-hint="hospital lobby modern"
-        fill
-        className="object-cover"
-        priority
-      />
+    <section id="home" className="relative w-full h-[80vh] min-h-[500px] flex items-center bg-gradient-to-br from-blue-200 via-blue-300 to-green-200">
       <div className="container relative z-20 px-4 md:px-6">
         <div className="max-w-3xl text-left">
           <h1 className="text-4xl font-bold tracking-tighter text-white sm:text-5xl md:text-6xl lg:text-7xl !leading-tight" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.5)'}}>
@@ -24,7 +14,7 @@ export default function Hero() {
           </p>
           <div className="mt-8">
             <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 animate-pulse">
-              <Link href="#appointment">Schedule an Appointment</Link>
+              <Link href="/booking">Schedule an Appointment</Link>
             </Button>
           </div>
         </div>
