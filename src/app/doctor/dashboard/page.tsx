@@ -112,7 +112,7 @@ export default function DoctorDashboard() {
     });
 
     toast({
-        title: "Availability Updated",
+        title: "Unavailability Updated",
         description: `Your unavailable slots for ${format(selectedDate, 'PPP')} have been saved.`,
     });
   }
@@ -194,7 +194,7 @@ export default function DoctorDashboard() {
               </Card>
                <Card>
                   <CardHeader>
-                      <CardTitle>Set Availability</CardTitle>
+                      <CardTitle>Set Unavailability</CardTitle>
                       <CardDescription>Select a date and mark the times you are unavailable.</CardDescription>
                   </CardHeader>
                   <CardContent className="flex flex-col lg:flex-row items-start gap-4">
@@ -264,3 +264,5 @@ export default function DoctorDashboard() {
     </div>
   );
 }
+
+    
