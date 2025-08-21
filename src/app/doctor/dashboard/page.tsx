@@ -9,7 +9,6 @@ import { useAuth } from "@/context/auth-context";
 import { mockAppointments, mockPatients, Appointment, Patient } from "@/lib/data";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
@@ -44,7 +43,7 @@ export default function DoctorDashboard() {
 
 
   useEffect(() => {
-    if (!authState.isAuthenticated || authState.userType !== 'doctor') {
+    if (!authState.loading && (!authState.isAuthenticated || authState.userType !== 'doctor')) {
       router.push('/doctor/login');
     }
   }, [authState, router]);
@@ -72,7 +71,7 @@ export default function DoctorDashboard() {
     }
   }
 
-  if (!authState.isAuthenticated || authState.userType !== 'doctor') {
+  if (authState.loading || !authState.isAuthenticated || authState.userType !== 'doctor') {
     return <div className="flex items-center justify-center min-h-[calc(100vh-14rem)]">Loading...</div>;
   }
   
@@ -201,5 +200,3 @@ export default function DoctorDashboard() {
       </main>
     </div>
   );
-
-    

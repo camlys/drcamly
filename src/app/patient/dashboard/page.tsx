@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function PatientDashboard() {
-  const { authState, logout } = useAuth();
+  const { authState } = useAuth();
   const router = useRouter();
   
   // Mocking a logged-in patient. In a real app, this would come from the auth state.
@@ -28,12 +28,12 @@ export default function PatientDashboard() {
   }, [currentPatientId]);
 
   useEffect(() => {
-    if (!authState.isAuthenticated || authState.userType !== 'patient') {
+    if (!authState.loading && (!authState.isAuthenticated || authState.userType !== 'patient')) {
       router.push('/patient/login');
     }
   }, [authState, router]);
 
-  if (!authState.isAuthenticated || authState.userType !== 'patient') {
+  if (authState.loading || !authState.isAuthenticated || authState.userType !== 'patient') {
     return <div className="flex items-center justify-center min-h-[calc(100vh-14rem)]">Loading...</div>;
   }
 
