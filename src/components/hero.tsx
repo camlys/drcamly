@@ -23,7 +23,7 @@ export default function Hero() {
             Welcome to CamlyCare, where our dedicated team provides exceptional healthcare services with a personal touch.
           </p>
           <div className="mt-8">
-            <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
+            <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 animate-pulse">
               <Link href="#appointment">Schedule an Appointment</Link>
             </Button>
           </div>
