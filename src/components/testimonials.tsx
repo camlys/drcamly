@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
 import { addTestimonial, getTestimonials } from '@/lib/data';
 import { Testimonial } from '@/lib/types';
-import { supabase } from '@/lib/supabaseClient';
+import { getSupabase } from '@/lib/supabaseClient';
 
 const testimonialSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters."),
@@ -36,6 +36,7 @@ export default function Testimonials() {
     }
     fetchTestimonials();
     
+    const supabase = getSupabase();
     const channel = supabase
       .channel('testimonials-changes')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'testimonials' }, (payload) => {

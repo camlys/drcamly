@@ -20,7 +20,7 @@ import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabase } from "@/lib/supabaseClient";
 
 function NotificationPanel({ notifications, onOpenChange }: { notifications: Notification[], onOpenChange: (open: boolean) => void }) {
     return (
@@ -80,6 +80,7 @@ export default function Header() {
     }
     fetchNotifications();
 
+    const supabase = getSupabase();
     const channel = supabase
       .channel(`notifications:${userId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `userId=eq.${userId}` }, (payload) => {

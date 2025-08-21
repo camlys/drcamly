@@ -12,7 +12,7 @@ import { Doctor } from '@/lib/types';
 import { getDoctors } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Star } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { getSupabase } from '@/lib/supabaseClient';
 
 const StarRating = ({ rating, count }: { rating: number, count: number }) => {
     return (
@@ -42,6 +42,7 @@ export default function DoctorSearch() {
     };
     fetchAndSetDoctors();
 
+    const supabase = getSupabase();
     const channel = supabase
       .channel('doctors-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'doctors' }, (payload) => {
