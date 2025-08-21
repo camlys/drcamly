@@ -289,7 +289,7 @@ export default function PatientDashboard() {
                                     </div>
                                </div>
                                 <Button asChild className="mt-4 md:mt-0">
-                                  <Link href="/booking">Reschedule</Link>
+                                  <Link href={`/booking?rescheduleId=${upcomingAppointments[0].id}`}>Reschedule</Link>
                                 </Button>
                            </div>
                        ) : (

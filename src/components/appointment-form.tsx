@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { mockDoctors, addAppointment, mockPatients, timeSlots, mockAppointments } from "@/lib/data";
+import { mockDoctors, addAppointment, updateAppointment, mockPatients, timeSlots, mockAppointments } from "@/lib/data";
 import { useAuth } from "@/context/auth-context";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
@@ -45,9 +45,13 @@ const defaultValues: Partial<AppointmentFormValues> = {
 function AppointmentFormContent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { authState } = useAuth();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
+  const rescheduleId = searchParams.get("rescheduleId");
+  const isEditing = !!rescheduleId;
+
   const form = useForm<AppointmentFormValues>({
     resolver: zodResolver(appointmentFormSchema),
     defaultValues,
@@ -92,15 +96,30 @@ function AppointmentFormContent() {
     if (doctorId && mockDoctors.some(d => d.id === doctorId)) {
       form.setValue("doctor", doctorId);
     }
-  }, [searchParams, form]);
+
+    if (rescheduleId) {
+        const appointmentToEdit = mockAppointments.find(a => a.id === rescheduleId);
+        if (appointmentToEdit) {
+            form.reset({
+                name: appointmentToEdit.patientName,
+                email: mockPatients.find(p => p.id === appointmentToEdit.patientId)?.email,
+                doctor: appointmentToEdit.doctorId,
+                date: new Date(appointmentToEdit.date),
+                time: appointmentToEdit.time,
+                consultationType: appointmentToEdit.consultationType,
+                message: appointmentToEdit.notes,
+            });
+        }
+    }
+  }, [searchParams, form, rescheduleId]);
 
   useEffect(() => {
-    if (authState.isAuthenticated && authState.userType === 'patient') {
+    if (authState.isAuthenticated && authState.userType === 'patient' && !isEditing) {
       const patient = mockPatients[0]; 
       form.setValue('name', patient.name);
       form.setValue('email', patient.email);
     }
-  }, [authState, form]);
+  }, [authState, form, isEditing]);
 
 
   function onSubmit(data: AppointmentFormValues) {
@@ -112,29 +131,49 @@ function AppointmentFormContent() {
 
     const patientId = authState.isAuthenticated && authState.userType === 'patient' ? "pat1" : "new-patient";
 
-    addAppointment({
-        patientName: data.name,
-        patientId: patientId,
-        doctorName: doctor.name,
-        doctorId: doctor.id,
-        department: doctor.specialty,
-        date: data.date.toISOString(),
-        time: data.time,
-        consultationType: data.consultationType,
-        consultationFee: doctor.consultationFee,
-        notes: data.message,
-    });
-    
-    toast({
-      title: "Appointment Scheduled!",
-      description: `Thank you, ${data.name}. Your ${data.consultationType} appointment with ${doctor?.name} on ${format(data.date, "PPP")} at ${data.time} has been successfully booked.`,
-      variant: "default",
-      className: "bg-accent text-accent-foreground border-0",
-    });
-    form.reset(defaultValues);
-    const doctorId = searchParams.get("doctor");
-    if (doctorId) {
-        form.setValue("doctor", "");
+    if (isEditing && rescheduleId) {
+        updateAppointment(rescheduleId, {
+            patientName: data.name,
+            patientId: patientId,
+            doctorName: doctor.name,
+            doctorId: doctor.id,
+            department: doctor.specialty,
+            date: data.date.toISOString(),
+            time: data.time,
+            consultationType: data.consultationType,
+            consultationFee: doctor.consultationFee,
+            notes: data.message,
+        });
+        toast({
+            title: "Appointment Updated!",
+            description: `Your appointment with ${doctor?.name} on ${format(data.date, "PPP")} has been successfully rescheduled.`,
+            variant: "default",
+        });
+        router.push('/patient/dashboard');
+    } else {
+        addAppointment({
+            patientName: data.name,
+            patientId: patientId,
+            doctorName: doctor.name,
+            doctorId: doctor.id,
+            department: doctor.specialty,
+            date: data.date.toISOString(),
+            time: data.time,
+            consultationType: data.consultationType,
+            consultationFee: doctor.consultationFee,
+            notes: data.message,
+        });
+        toast({
+            title: "Appointment Scheduled!",
+            description: `Thank you, ${data.name}. Your ${data.consultationType} appointment with ${doctor?.name} on ${format(data.date, "PPP")} at ${data.time} has been successfully booked.`,
+            variant: "default",
+            className: "bg-accent text-accent-foreground border-0",
+        });
+        form.reset(defaultValues);
+        const doctorId = searchParams.get("doctor");
+        if (doctorId) {
+            form.setValue("doctor", "");
+        }
     }
   }
 
@@ -145,8 +184,8 @@ function AppointmentFormContent() {
           <div className="grid md:grid-cols-2">
             <div className="p-6 md:p-8">
               <CardHeader className="p-0 mb-6">
-                <CardTitle className="text-3xl font-bold tracking-tight">Book an Appointment</CardTitle>
-                <CardDescription>Fill out the form below to schedule your visit.</CardDescription>
+                <CardTitle className="text-3xl font-bold tracking-tight">{isEditing ? "Reschedule Appointment" : "Book an Appointment"}</CardTitle>
+                <CardDescription>{isEditing ? "Update the details below to reschedule your visit." : "Fill out the form below to schedule your visit."}</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <Form {...form}>
@@ -244,7 +283,9 @@ function AppointmentFormContent() {
                     <FormField control={form.control} name="message" render={({ field }) => (
                         <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Tell us a little bit about your needs..." className="resize-none" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">Schedule Now</Button>
+                    <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                        {isEditing ? "Update Appointment" : "Schedule Now"}
+                    </Button>
                   </form>
                 </Form>
               </CardContent>

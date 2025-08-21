@@ -178,6 +178,16 @@ export const addAppointment = (appointment: Omit<Appointment, 'id' | 'status'>) 
   return newAppointment;
 };
 
+// Function to update an existing appointment
+export const updateAppointment = (appointmentId: string, updatedDetails: Omit<Appointment, 'id' | 'status'>) => {
+    const appointmentIndex = mockAppointments.findIndex(a => a.id === appointmentId);
+    if(appointmentIndex === -1) return null;
+
+    const updatedAppointment = { ...mockAppointments[appointmentIndex], ...updatedDetails };
+    mockAppointments[appointmentIndex] = updatedAppointment;
+    return updatedAppointment;
+}
+
 // Function to update a patient's details
 export const updatePatient = (patientId: string, updatedDetails: Partial<Omit<Patient, 'id'>>) => {
     const patientIndex = mockPatients.findIndex(p => p.id === patientId);
