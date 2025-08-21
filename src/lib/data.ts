@@ -17,6 +17,7 @@ export type Doctor = {
     id: string;
     name: string;
     specialty: string;
+    avatarUrl?: string;
     bio?: string;
     unavailability: { date: string; times: string[] }[];
 };
@@ -25,6 +26,7 @@ export type Patient = {
     id: string;
     name: string;
     email: string;
+    avatarUrl?: string;
     dateOfBirth: string;
     gender: string;
     phone: string;
@@ -33,6 +35,7 @@ export type Patient = {
 export type ChatParticipant = {
     id: string;
     name: string;
+    avatarUrl?: string;
     type: 'doctor' | 'patient';
     online: boolean;
 }
@@ -61,20 +64,20 @@ export const timeSlots = [
 ];
 
 export let mockDoctors: Doctor[] = [
-  { id: "doc1", name: "Dr. Evelyn Reed", specialty: "Cardiology", bio: "Dr. Reed is a board-certified cardiologist with over 15 years of experience. She is passionate about preventative care and patient education.", unavailability: [] },
-  { id: "doc2", name: "Dr. Marcus Thorne", specialty: "Neurology", unavailability: [] },
-  { id: "doc3", name: "Dr. Lena Petrova", specialty: "Pediatrics", unavailability: [] },
-  { id: "doc4", name: "Dr. Kenji Tanaka", specialty: "Orthopedics", unavailability: [] },
-  { id: "doc5", name: "Dr. Aisha Khan", specialty: "Ophthalmology", unavailability: [] },
-  { id: "doc6", name: "Dr. Samuel Green", specialty: "General Practice", unavailability: [] },
-  { id: "doc7", name: "Dr. Clara Oswald", specialty: "Cardiology", unavailability: [] },
-  { id: "doc8", name: "Dr. Ben Carter", specialty: "Neurology", unavailability: [] },
+  { id: "doc1", name: "Dr. Evelyn Reed", specialty: "Cardiology", bio: "Dr. Reed is a board-certified cardiologist with over 15 years of experience. She is passionate about preventative care and patient education.", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc1" },
+  { id: "doc2", name: "Dr. Marcus Thorne", specialty: "Neurology", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc2" },
+  { id: "doc3", name: "Dr. Lena Petrova", specialty: "Pediatrics", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc3" },
+  { id: "doc4", name: "Dr. Kenji Tanaka", specialty: "Orthopedics", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc4" },
+  { id: "doc5", name: "Dr. Aisha Khan", specialty: "Ophthalmology", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc5" },
+  { id: "doc6", name: "Dr. Samuel Green", specialty: "General Practice", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc6" },
+  { id: "doc7", name: "Dr. Clara Oswald", specialty: "Cardiology", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc7" },
+  { id: "doc8", name: "Dr. Ben Carter", specialty: "Neurology", unavailability: [], avatarUrl: "https://i.pravatar.cc/150?u=doc8" },
 ];
 
 export let mockPatients: Patient[] = [
-    { id: "pat1", name: "John Doe", email: "john.doe@example.com", dateOfBirth: "1985-05-20", gender: "Male", phone: "(123) 456-7890" },
-    { id: "pat2", name: "Jane Smith", email: "jane.smith@example.com", dateOfBirth: "1992-09-15", gender: "Female", phone: "(234) 567-8901" },
-    { id: "pat3", name: "Peter Jones", email: "peter.jones@example.com", dateOfBirth: "1978-11-30", gender: "Male", phone: "(345) 678-9012" },
+    { id: "pat1", name: "John Doe", email: "john.doe@example.com", dateOfBirth: "1985-05-20", gender: "Male", phone: "(123) 456-7890", avatarUrl: "https://i.pravatar.cc/150?u=pat1" },
+    { id: "pat2", name: "Jane Smith", email: "jane.smith@example.com", dateOfBirth: "1992-09-15", gender: "Female", phone: "(234) 567-8901", avatarUrl: "https://i.pravatar.cc/150?u=pat2" },
+    { id: "pat3", name: "Peter Jones", email: "peter.jones@example.com", dateOfBirth: "1978-11-30", gender: "Male", phone: "(345) 678-9012", avatarUrl: "https://i.pravatar.cc/150?u=pat3" },
 ];
 
 
@@ -161,7 +164,7 @@ export const addAppointment = (appointment: Omit<Appointment, 'id' | 'status'>) 
 };
 
 // Function to update a patient's details
-export const updatePatient = (patientId: string, updatedDetails: Omit<Patient, 'id'>) => {
+export const updatePatient = (patientId: string, updatedDetails: Partial<Omit<Patient, 'id'>>) => {
     const patientIndex = mockPatients.findIndex(p => p.id === patientId);
     if(patientIndex === -1) return null;
 
@@ -185,8 +188,8 @@ export let mockConversations: ChatConversation[] = [
     {
         id: 'convo1',
         participants: [
-            { id: 'pat1', name: 'John Doe', type: 'patient', online: true },
-            { id: 'doc1', name: 'Dr. Evelyn Reed', type: 'doctor', online: true }
+            { id: 'pat1', name: 'John Doe', type: 'patient', online: true, avatarUrl: "https://i.pravatar.cc/150?u=pat1" },
+            { id: 'doc1', name: 'Dr. Evelyn Reed', type: 'doctor', online: true, avatarUrl: "https://i.pravatar.cc/150?u=doc1" }
         ],
         lastMessage: 'Thank you, Doctor!',
         lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
@@ -195,8 +198,8 @@ export let mockConversations: ChatConversation[] = [
     {
         id: 'convo2',
         participants: [
-            { id: 'pat1', name: 'John Doe', type: 'patient', online: true },
-            { id: 'doc2', name: 'Dr. Marcus Thorne', type: 'doctor', online: false }
+            { id: 'pat1', name: 'John Doe', type: 'patient', online: true, avatarUrl: "https://i.pravatar.cc/150?u=pat1" },
+            { id: 'doc2', name: 'Dr. Marcus Thorne', type: 'doctor', online: false, avatarUrl: "https://i.pravatar.cc/150?u=doc2" }
         ],
         lastMessage: 'I have a follow-up question about my prescription.',
         lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
@@ -205,8 +208,8 @@ export let mockConversations: ChatConversation[] = [
     {
         id: 'convo3',
         participants: [
-            { id: 'pat2', name: 'Jane Smith', type: 'patient', online: false },
-            { id: 'doc1', name: 'Dr. Evelyn Reed', type: 'doctor', online: true }
+            { id: 'pat2', name: 'Jane Smith', type: 'patient', online: false, avatarUrl: "https://i.pravatar.cc/150?u=pat2" },
+            { id: 'doc1', name: 'Dr. Evelyn Reed', type: 'doctor', online: true, avatarUrl: "https://i.pravatar.cc/150?u=doc1" }
         ],
         lastMessage: 'See you next week.',
         lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),

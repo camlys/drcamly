@@ -2,18 +2,19 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { format, differenceInYears } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
 import Link from "next/link";
+import Image from "next/image";
 import { mockAppointments, Appointment, mockPatients, updatePatient, Patient } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Cake, Phone, User, Pencil, CalendarIcon } from "lucide-react";
+import { MessageSquare, Cake, Phone, User, Pencil, CalendarIcon, Camera } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +26,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const patientProfileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -32,6 +34,7 @@ const patientProfileSchema = z.object({
   dateOfBirth: z.date({ required_error: "Your date of birth is required." }),
   gender: z.string({ required_error: "Please select your gender." }),
   phone: z.string().min(10, "Please enter a valid phone number."),
+  avatarUrl: z.string().optional(),
 });
 
 type PatientProfileValues = z.infer<typeof patientProfileSchema>;
@@ -46,6 +49,8 @@ export default function PatientDashboard() {
   
   const [patients, setPatients] = useState<Patient[]>(mockPatients);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentPatient = useMemo(() => patients.find(p => p.id === currentPatientId), [patients, currentPatientId]);
   
@@ -68,7 +73,9 @@ export default function PatientDashboard() {
         phone: currentPatient.phone,
         gender: currentPatient.gender,
         dateOfBirth: new Date(currentPatient.dateOfBirth),
+        avatarUrl: currentPatient.avatarUrl,
       });
+      setImagePreview(currentPatient.avatarUrl || null);
     }
   }, [currentPatient, form]);
 
@@ -99,7 +106,14 @@ export default function PatientDashboard() {
   }
   
   const onProfileSubmit = (data: PatientProfileValues) => {
-    const updated = updatePatient(currentPatient.id, { ...data, dateOfBirth: data.dateOfBirth.toISOString() });
+    const updatedDetails = { 
+      ...data, 
+      dateOfBirth: data.dateOfBirth.toISOString(),
+      avatarUrl: imagePreview || data.avatarUrl,
+    };
+    
+    const updated = updatePatient(currentPatient.id, updatedDetails);
+    
     if(updated) {
       setPatients(prev => prev.map(p => p.id === currentPatient.id ? updated : p));
       toast({
@@ -115,8 +129,19 @@ export default function PatientDashboard() {
       });
     }
   };
+  
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+      form.setValue('avatarUrl', previewUrl);
+    }
+  };
+
 
   const patientAge = differenceInYears(new Date(), new Date(currentPatient.dateOfBirth));
+  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('');
 
 
   return (
@@ -125,7 +150,13 @@ export default function PatientDashboard() {
         <div className="grid gap-6">
             <div className="flex items-center justify-between">
               <h1 className="text-3xl font-bold text-primary">Patient Dashboard</h1>
-               <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
+               <Dialog open={isProfileDialogOpen} onOpenChange={(isOpen) => {
+                  setIsProfileDialogOpen(isOpen);
+                  if (!isOpen) {
+                    form.reset();
+                    setImagePreview(currentPatient.avatarUrl || null);
+                  }
+               }}>
                   <DialogTrigger asChild>
                     <Button variant="outline">
                       <User className="w-4 h-4 mr-2" /> My Profile
@@ -137,6 +168,19 @@ export default function PatientDashboard() {
                     </DialogHeader>
                      <Form {...form}>
                       <form onSubmit={form.handleSubmit(onProfileSubmit)} className="space-y-4 py-4">
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="relative">
+                                <Avatar className="w-24 h-24">
+                                    <AvatarImage src={imagePreview || ''} alt={currentPatient.name} />
+                                    <AvatarFallback className="text-3xl">{getInitials(currentPatient.name)}</AvatarFallback>
+                                </Avatar>
+                                <Button type="button" size="icon" className="absolute bottom-0 right-0 rounded-full" onClick={() => fileInputRef.current?.click()}>
+                                    <Camera className="w-4 h-4" />
+                                </Button>
+                                <Input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
+                            </div>
+                        </div>
+
                         <FormField control={form.control} name="name" render={({ field }) => (
                           <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
@@ -191,8 +235,16 @@ export default function PatientDashboard() {
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Welcome, {currentPatient.name}!</CardTitle>
-                    <CardDescription>This is your personal health dashboard.</CardDescription>
+                    <div className="flex items-center gap-4">
+                        <Avatar className="w-16 h-16">
+                            <AvatarImage src={currentPatient.avatarUrl} alt={currentPatient.name} />
+                            <AvatarFallback>{getInitials(currentPatient.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <CardTitle>Welcome, {currentPatient.name}!</CardTitle>
+                            <CardDescription>This is your personal health dashboard.</CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
                     <div className="flex items-center gap-2">
@@ -317,5 +369,3 @@ export default function PatientDashboard() {
     </div>
   );
 }
-
-    

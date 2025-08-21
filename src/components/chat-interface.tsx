@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { mockConversations, mockMessages, ChatConversation, ChatMessage } from '@/lib/data';
+import { mockConversations, mockMessages, ChatConversation, ChatMessage, mockDoctors, mockPatients } from '@/lib/data';
 import { Send, Search, Check, CheckCheck } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
@@ -21,7 +21,14 @@ export default function ChatInterface() {
     const [searchTerm, setSearchTerm] = useState('');
     const messageEndRef = useRef<HTMLDivElement>(null);
 
-    const currentUser = authState.userType === 'doctor' ? { id: 'doc1', name: 'Dr. Evelyn Reed' } : { id: 'pat1', name: 'John Doe' };
+    const currentUser = useMemo(() => {
+        if (authState.userType === 'doctor') {
+            return mockDoctors.find(d => d.id === 'doc1');
+        } else {
+            return mockPatients.find(p => p.id === 'pat1');
+        }
+    }, [authState.userType]);
+
 
     useEffect(() => {
         if (selectedConversation) {
@@ -37,7 +44,7 @@ export default function ChatInterface() {
     }, [messages]);
 
     const handleSendMessage = () => {
-        if (newMessage.trim() === '' || !selectedConversation) return;
+        if (newMessage.trim() === '' || !selectedConversation || !currentUser) return;
 
         const newMsg: ChatMessage = {
             id: `msg${Date.now()}`,
@@ -50,7 +57,6 @@ export default function ChatInterface() {
 
         setMessages(prev => [...prev, newMsg]);
         
-        // Also update the conversation's last message for immediate feedback
         setConversations(prev => prev.map(c => 
             c.id === selectedConversation.id ? { ...c, lastMessage: newMessage } : c
         ));
@@ -61,6 +67,10 @@ export default function ChatInterface() {
     const getInitials = (name: string) => {
         return name.split(' ').map(n => n[0]).join('');
     }
+    
+    if (!currentUser) {
+        return <div>Loading...</div>;
+    }
 
     const filteredConversations = conversations.filter(c =>
         c.participants.find(p => p.id !== currentUser.id)?.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -68,9 +78,7 @@ export default function ChatInterface() {
 
     const handleSelectConversation = (conversation: ChatConversation) => {
         setSelectedConversation(conversation);
-        // Mark messages as read
         setMessages(prev => prev.map(m => m.senderId !== currentUser.id ? { ...m, read: true } : m));
-        // Reset unread count in the UI
         setConversations(prev => prev.map(c => c.id === conversation.id ? { ...c, unreadCount: 0 } : c));
     };
 
@@ -104,7 +112,7 @@ export default function ChatInterface() {
                             >
                                 <div className="relative">
                                     <Avatar>
-                                        <AvatarImage src={`https://i.pravatar.cc/40?u=${otherParticipant.id}`} />
+                                        <AvatarImage src={otherParticipant.avatarUrl} />
                                         <AvatarFallback>{getInitials(otherParticipant.name)}</AvatarFallback>
                                     </Avatar>
                                     {otherParticipant.online && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />}
@@ -125,7 +133,7 @@ export default function ChatInterface() {
                         <header className="p-4 border-b flex items-center gap-3">
                              <div className="relative">
                                 <Avatar>
-                                    <AvatarImage src={`https://i.pravatar.cc/40?u=${selectedConversation.participants.find(p=>p.id !== currentUser.id)?.id}`} />
+                                    <AvatarImage src={selectedConversation.participants.find(p=>p.id !== currentUser.id)?.avatarUrl} />
                                     <AvatarFallback>{getInitials(selectedConversation.participants.find(p=>p.id !== currentUser.id)?.name || '')}</AvatarFallback>
                                 </Avatar>
                                 {selectedConversation.participants.find(p => p.id !== currentUser.id)?.online && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />}

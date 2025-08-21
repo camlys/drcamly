@@ -2,8 +2,9 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
@@ -19,7 +20,7 @@ import { format, formatISO, startOfDay, subDays } from "date-fns";
 import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart, Cell, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ChevronDown, MessageSquare, UserCircle, Pencil } from "lucide-react";
+import { MessageSquare, UserCircle, Pencil, Camera } from "lucide-react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { z } from "zod";
@@ -35,6 +36,7 @@ const doctorProfileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   specialty: z.string().min(2, "Specialty is required."),
   bio: z.string().optional(),
+  avatarUrl: z.string().optional(),
 });
 type DoctorProfileValues = z.infer<typeof doctorProfileSchema>;
 
@@ -55,14 +57,13 @@ export default function DoctorDashboard() {
   const currentDoctor = useMemo(() => doctors.find(d => d.id === currentDoctorId), [doctors, currentDoctorId]);
 
   const [selectedUnavailableTimes, setSelectedUnavailableTimes] = useState<string[]>([]);
+  
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const form = useForm<DoctorProfileValues>({
     resolver: zodResolver(doctorProfileSchema),
-    defaultValues: {
-      name: currentDoctor?.name,
-      specialty: currentDoctor?.specialty,
-      bio: currentDoctor?.bio,
-    },
   });
 
   useEffect(() => {
@@ -71,9 +72,11 @@ export default function DoctorDashboard() {
         name: currentDoctor.name,
         specialty: currentDoctor.specialty,
         bio: currentDoctor.bio,
+        avatarUrl: currentDoctor.avatarUrl,
       });
+      setImagePreview(currentDoctor.avatarUrl || null);
     }
-  }, [currentDoctor, form]);
+  }, [currentDoctor, form, isEditingProfile]);
   
   const { todaysAppointments, doctorPatients, appointmentStats, weeklyAppointmentsChartData } = useMemo(() => {
     const today = startOfDay(new Date());
@@ -206,7 +209,14 @@ export default function DoctorDashboard() {
 
   const onProfileSubmit = (data: DoctorProfileValues) => {
     if (!currentDoctor) return;
-    const updated = updateDoctor(currentDoctor.id, data);
+    
+    const updatedDetails = {
+      ...data,
+      avatarUrl: imagePreview || data.avatarUrl,
+    };
+    
+    const updated = updateDoctor(currentDoctor.id, updatedDetails);
+
     if(updated) {
       setDoctors(prev => prev.map(d => d.id === currentDoctor.id ? updated : d));
       toast({
@@ -220,6 +230,15 @@ export default function DoctorDashboard() {
         description: "Could not update your profile.",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+      form.setValue('avatarUrl', previewUrl);
     }
   };
 
@@ -273,13 +292,13 @@ export default function DoctorDashboard() {
                            <Button asChild>
                                 <Link href="/chat"><MessageSquare className="mr-2 h-4 w-4" /> Go to Messages</Link>
                            </Button>
-                           <Dialog onOpenChange={setIsEditingProfile.bind(null, false)}>
+                           <Dialog onOpenChange={(isOpen) => !isOpen && setIsEditingProfile(false)}>
                             <DialogTrigger asChild>
                                <Button variant="outline">
                                     <UserCircle className="w-4 h-4 mr-2" /> View My Profile
                                </Button>
                              </DialogTrigger>
-                             <DialogContent className="sm:max-w-[480px]">
+                             <DialogContent className="sm:max-w-lg">
                                 <DialogHeader>
                                     <DialogTitle>{isEditingProfile ? "Edit Profile" : "My Profile"}</DialogTitle>
                                     <DialogDescription>{isEditingProfile ? "Update your professional information below." : "Your professional information."}</DialogDescription>
@@ -288,6 +307,18 @@ export default function DoctorDashboard() {
                                     isEditingProfile ? (
                                     <Form {...form}>
                                         <form onSubmit={form.handleSubmit(onProfileSubmit)} className="space-y-4 py-4">
+                                            <div className="flex flex-col items-center gap-4">
+                                                <div className="relative">
+                                                    <Avatar className="w-24 h-24">
+                                                        <AvatarImage src={imagePreview || ''} alt={currentDoctor.name} />
+                                                        <AvatarFallback className="text-3xl">{getInitials(currentDoctor.name)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <Button type="button" size="icon" className="absolute bottom-0 right-0 rounded-full" onClick={() => fileInputRef.current?.click()}>
+                                                        <Camera className="w-4 h-4" />
+                                                    </Button>
+                                                    <Input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
+                                                </div>
+                                            </div>
                                             <FormField control={form.control} name="name" render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>Full Name</FormLabel>
@@ -323,9 +354,9 @@ export default function DoctorDashboard() {
                                 ) : (
                                     <div className="grid gap-4 py-4">
                                         <div className="flex items-center gap-4">
-                                            <Avatar className="w-16 h-16">
-                                            <AvatarImage src={`https://i.pravatar.cc/80?u=${currentDoctor.id}`} />
-                                            <AvatarFallback>{getInitials(currentDoctor.name)}</AvatarFallback>
+                                            <Avatar className="w-24 h-24">
+                                              <AvatarImage src={currentDoctor.avatarUrl} alt={currentDoctor.name} />
+                                              <AvatarFallback className="text-3xl">{getInitials(currentDoctor.name)}</AvatarFallback>
                                             </Avatar>
                                             <div>
                                             <h3 className="text-lg font-semibold">{currentDoctor.name}</h3>
@@ -522,7 +553,7 @@ export default function DoctorDashboard() {
                                     <TableCell>
                                       <div className="flex items-center gap-3">
                                         <Avatar>
-                                          <AvatarImage src={`https://i.pravatar.cc/40?u=${patient.id}`} />
+                                          <AvatarImage src={patient.avatarUrl} />
                                           <AvatarFallback>{getInitials(patient.name)}</AvatarFallback>
                                         </Avatar>
                                         <span>{patient.name}</span>
@@ -544,5 +575,3 @@ export default function DoctorDashboard() {
     </div>
   );
 }
-
-    
