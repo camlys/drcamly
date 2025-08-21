@@ -1,24 +1,46 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { mockDoctors } from '@/lib/data';
+import { mockDoctors, Doctor } from '@/lib/data';
 import { useRouter } from 'next/navigation';
-
-const specialties = ["All", ...new Set(mockDoctors.map(d => d.specialty))];
+import { supabase } from '@/lib/supabaseClient';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DoctorSearch() {
   const [searchTerm, setSearchTerm] = useState('');
   const [specialty, setSpecialty] = useState('All');
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [specialties, setSpecialties] = useState<string[]>(['All']);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const filteredDoctors = mockDoctors.filter(doctor =>
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      setLoading(true);
+      const { data, error } = await supabase.from('doctors').select('id, name, specialty');
+      
+      if (error) {
+        console.error("Error fetching doctors:", error);
+        setDoctors([]);
+      } else if (data) {
+        setDoctors(data);
+        const uniqueSpecialties = ["All", ...new Set(data.map(d => d.specialty))];
+        setSpecialties(uniqueSpecialties);
+      }
+      setLoading(false);
+    };
+    fetchDoctors();
+  }, []);
+
+
+  const filteredDoctors = doctors.filter(doctor =>
     doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (specialty === 'All' || doctor.specialty === specialty)
   );
@@ -49,7 +71,7 @@ export default function DoctorSearch() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-grow"
             />
-            <Select onValueChange={setSpecialty} defaultValue="All">
+            <Select onValueChange={setSpecialty} defaultValue="All" disabled={loading}>
               <SelectTrigger className="w-full md:w-[240px]" aria-label="Filter by specialty">
                 <SelectValue placeholder="Filter by specialty" />
               </SelectTrigger>
@@ -59,24 +81,44 @@ export default function DoctorSearch() {
             </Select>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredDoctors.map((doctor, index) => (
-              <Card key={index} className="text-center transition-all duration-300 hover:shadow-lg">
-                <CardHeader>
-                  <div className="mx-auto w-24 h-24 rounded-full overflow-hidden border-4 border-primary/20">
-                     <Image src={`https://placehold.co/100x100.png?text=${doctor.name.split(' ').map(n=>n[0]).join('')}`} alt={`Avatar of ${doctor.name}`} width={100} height={100} data-ai-hint="doctor portrait" />
-                  </div>
-                </CardHeader>
-                <CardContent className="px-2">
-                  <CardTitle className="text-lg">{doctor.name}</CardTitle>
-                  <p className="text-muted-foreground">{doctor.specialty}</p>
-                </CardContent>
-                <CardFooter className="justify-center pb-4">
-                   <Button variant="outline" className="w-full" onClick={() => handleBookNow(doctor.id)}>
-                    Book Now
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+            {loading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <Card key={index} className="text-center">
+                  <CardHeader>
+                    <Skeleton className="mx-auto w-24 h-24 rounded-full" />
+                  </CardHeader>
+                  <CardContent className="px-2 space-y-2">
+                     <Skeleton className="h-5 w-3/4 mx-auto" />
+                     <Skeleton className="h-4 w-1/2 mx-auto" />
+                  </CardContent>
+                  <CardFooter className="justify-center pb-4">
+                     <Skeleton className="h-10 w-full" />
+                  </CardFooter>
+                </Card>
+              ))
+            ) : (
+              filteredDoctors.map((doctor, index) => (
+                <Card key={doctor.id} className="text-center transition-all duration-300 hover:shadow-lg">
+                  <CardHeader>
+                    <div className="mx-auto w-24 h-24 rounded-full overflow-hidden border-4 border-primary/20">
+                       <Image src={`https://placehold.co/100x100.png?text=${doctor.name.split(' ').map(n=>n[0]).join('')}`} alt={`Avatar of ${doctor.name}`} width={100} height={100} data-ai-hint="doctor portrait" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="px-2">
+                    <CardTitle className="text-lg">{doctor.name}</CardTitle>
+                    <p className="text-muted-foreground">{doctor.specialty}</p>
+                  </CardContent>
+                  <CardFooter className="justify-center pb-4">
+                     <Button variant="outline" className="w-full" onClick={() => handleBookNow(doctor.id)}>
+                      Book Now
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))
+            )}
+            {!loading && filteredDoctors.length === 0 && (
+              <p className="col-span-full text-center text-muted-foreground">No doctors found matching your criteria.</p>
+            )}
           </div>
         </div>
       </div>
