@@ -9,17 +9,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { mockDoctors } from '@/lib/data';
+import { useRouter } from 'next/navigation';
 
 const specialties = ["All", ...new Set(mockDoctors.map(d => d.specialty))];
 
 export default function DoctorSearch() {
   const [searchTerm, setSearchTerm] = useState('');
   const [specialty, setSpecialty] = useState('All');
+  const router = useRouter();
 
   const filteredDoctors = mockDoctors.filter(doctor =>
     doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (specialty === 'All' || doctor.specialty === specialty)
   );
+
+  const handleBookNow = (doctorId: string) => {
+    router.push(`/#appointment?doctor=${encodeURIComponent(doctorId)}`);
+  };
 
   return (
     <section id="doctors" className="w-full py-12 md:py-24 lg:py-32 bg-secondary">
@@ -65,8 +71,8 @@ export default function DoctorSearch() {
                   <p className="text-muted-foreground">{doctor.specialty}</p>
                 </CardContent>
                 <CardFooter className="justify-center pb-4">
-                   <Button asChild variant="outline" className="w-full">
-                    <Link href={`/#appointment?doctor=${encodeURIComponent(doctor.id)}`}>Book Now</Link>
+                   <Button variant="outline" className="w-full" onClick={() => handleBookNow(doctor.id)}>
+                    Book Now
                   </Button>
                 </CardFooter>
               </Card>
