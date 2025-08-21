@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useAuth } from "@/context/auth-context";
 
 const loginFormSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -23,6 +24,7 @@ type LoginFormValues = z.infer<typeof loginFormSchema>;
 export default function DoctorLoginPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const { login } = useAuth();
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
@@ -32,7 +34,9 @@ export default function DoctorLoginPage() {
   });
 
   function onSubmit(data: LoginFormValues) {
+    // In a real app, you'd call your auth service here.
     console.log(data);
+    login('doctor');
     toast({
       title: "Logged In!",
       description: `Welcome back, Doctor!`,

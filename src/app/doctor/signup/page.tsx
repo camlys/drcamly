@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/context/auth-context";
 
 const signupFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -28,6 +29,7 @@ const specialties = ["Cardiology", "Neurology", "Pediatrics", "Orthopedics", "Op
 export default function DoctorSignupPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const { login } = useAuth();
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupFormSchema),
     defaultValues: {
@@ -38,12 +40,14 @@ export default function DoctorSignupPage() {
   });
 
   function onSubmit(data: SignupFormValues) {
+    // In a real app, you'd call your auth service to register the doctor.
     console.log(data);
+    login('doctor');
     toast({
       title: "Account Created!",
-      description: `Welcome, Dr. ${data.name}! Your account is pending approval.`,
+      description: `Welcome, Dr. ${data.name}! You are now logged in.`,
     });
-    router.push('/doctor/login');
+    router.push('/doctor/dashboard');
   }
 
   return (

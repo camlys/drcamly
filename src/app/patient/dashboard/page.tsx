@@ -1,16 +1,38 @@
+
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/context/auth-context";
 import Link from "next/link";
 
 export default function PatientDashboard() {
+  const { authState, logout } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!authState.isAuthenticated || authState.userType !== 'patient') {
+      router.push('/patient/login');
+    }
+  }, [authState, router]);
+
+  if (!authState.isAuthenticated || authState.userType !== 'patient') {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>; // Or a loading spinner
+  }
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
        <header className="bg-card border-b p-4">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary">Patient Dashboard</h1>
-           <Button asChild variant="outline">
-            <Link href="/">Logout</Link>
-          </Button>
+           <Button variant="outline" onClick={handleLogout}>Logout</Button>
         </div>
       </header>
       <main className="flex-1 container mx-auto p-4 md:p-6 lg:p-8">

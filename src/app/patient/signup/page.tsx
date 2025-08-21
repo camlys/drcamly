@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useAuth } from "@/context/auth-context";
 
 const signupFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -24,6 +25,7 @@ type SignupFormValues = z.infer<typeof signupFormSchema>;
 export default function PatientSignupPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const { login } = useAuth();
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupFormSchema),
     defaultValues: {
@@ -34,12 +36,14 @@ export default function PatientSignupPage() {
   });
 
   function onSubmit(data: SignupFormValues) {
+    // In a real app, you'd call your auth service to register the user.
     console.log(data);
+    login('patient'); // Log the user in directly after signup
     toast({
       title: "Account Created!",
-      description: `Welcome, ${data.name}! You can now log in.`,
+      description: `Welcome, ${data.name}! You are now logged in.`,
     });
-    router.push('/patient/login');
+    router.push('/patient/dashboard');
   }
 
   return (
