@@ -24,7 +24,7 @@ export default function DoctorSearch() {
   );
 
   const handleBookNow = (doctorId: string) => {
-    router.push(`/#appointment?doctor=${encodeURIComponent(doctorId)}`);
+    router.push(`/booking?doctor=${encodeURIComponent(doctorId)}`);
   };
 
   return (

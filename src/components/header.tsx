@@ -17,10 +17,10 @@ export default function Header() {
   const { authState, logout } = useAuth();
 
   const navItems = [
-    { label: "Departments", href: "#departments" },
-    { label: "Find a Doctor", href: "#doctors" },
-    { label: "Resources", href: "#resources" },
-    { label: "Testimonials", href: "#testimonials" },
+    { label: "Departments", href: "/#departments" },
+    { label: "Find a Doctor", href: "/#doctors" },
+    { label: "Resources", href: "/#resources" },
+    { label: "Testimonials", href: "/#testimonials" },
   ];
 
   const handleLogout = () => {
@@ -83,7 +83,7 @@ export default function Header() {
           )}
 
           <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90">
-            <Link href="#appointment">Book Appointment</Link>
+            <Link href="/booking">Book Appointment</Link>
           </Button>
         </nav>
         <Sheet>
@@ -138,7 +138,7 @@ export default function Header() {
               </nav>
               <SheetClose asChild>
                 <Button asChild className="mt-4 bg-accent text-accent-foreground hover:bg-accent/90">
-                  <Link href="#appointment">Book Appointment</Link>
+                  <Link href="/booking">Book Appointment</Link>
                 </Button>
               </SheetClose>
             </div>

@@ -1,5 +1,4 @@
 import React from 'react';
-import AppointmentForm from '@/components/appointment-form';
 import Departments from '@/components/departments';
 import DoctorSearch from '@/components/doctor-search';
 import Hero from '@/components/hero';
@@ -14,7 +13,6 @@ export default function Home() {
       <DoctorSearch />
       <PatientResources />
       <Testimonials />
-      <AppointmentForm />
     </>
   );
 }

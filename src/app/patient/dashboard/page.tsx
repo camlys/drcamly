@@ -93,7 +93,7 @@ export default function PatientDashboard() {
                             </TableBody>
                         </Table>
                          <Button asChild className="mt-4">
-                            <Link href="/#appointment">Book a new appointment</Link>
+                            <Link href="/booking">Book a new appointment</Link>
                         </Button>
                     </CardContent>
                 </Card>
