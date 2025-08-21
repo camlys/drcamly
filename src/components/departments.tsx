@@ -23,7 +23,7 @@ export default function Departments() {
             </p>
           </div>
         </div>
-        <div className="mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 pt-12">
+        <div className="mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8 pt-12">
           {departments.map((dept) => {
             const Icon = dept.icon;
             return (

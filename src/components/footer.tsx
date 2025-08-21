@@ -4,8 +4,8 @@ import { Stethoscope } from 'lucide-react';
 export default function Footer() {
   return (
     <footer className="w-full border-t bg-card text-card-foreground">
-      <div className="container grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 px-4 py-12 md:px-6">
-        <div className="flex flex-col gap-2">
+      <div className="container grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 px-4 py-12 md:px-6">
+        <div className="flex flex-col gap-2 md:col-span-1">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl mb-2">
             <Stethoscope className="h-6 w-6 text-primary" />
             <span>CamlyCare</span>
@@ -14,7 +14,7 @@ export default function Footer() {
             Providing exceptional healthcare with compassion and expertise. Your health is our mission.
           </p>
         </div>
-        <div>
+        <div className="md:col-span-1">
           <h3 className="font-semibold mb-4">Quick Links</h3>
           <ul className="space-y-2 text-sm">
             <li><Link href="/#departments" className="text-muted-foreground hover:text-primary transition-colors">Departments</Link></li>
@@ -23,13 +23,13 @@ export default function Footer() {
             <li><Link href="/#resources" className="text-muted-foreground hover:text-primary transition-colors">Patient Resources</Link></li>
           </ul>
         </div>
-        <div>
+        <div className="md:col-span-1">
           <h3 className="font-semibold mb-4">Our Mission</h3>
           <p className="text-muted-foreground text-sm">
             To deliver high-quality, patient-centered healthcare with a commitment to clinical excellence and compassionate service. Founded by the esteemed Dr. Camly.
           </p>
         </div>
-        <div>
+        <div className="md:col-span-1">
           <h3 className="font-semibold mb-4">Contact Us</h3>
           <address className="not-italic text-sm text-muted-foreground space-y-2">
             <p>123 Health St, Medville, MD 12345</p>

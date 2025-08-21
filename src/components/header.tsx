@@ -36,7 +36,7 @@ export default function Header() {
           <Stethoscope className="h-6 w-6 text-primary" />
           <span>CamlyCare</span>
         </Link>
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+        <nav className="hidden md:flex items-center gap-4 lg:gap-6 text-sm font-medium">
           {navItems.map((item) => (
             <Link
               key={item.label}

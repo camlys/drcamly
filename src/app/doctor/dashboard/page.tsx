@@ -192,7 +192,7 @@ export default function DoctorDashboard() {
                     <CardDescription>Manage your patients and appointments.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
                       <h3 className="text-lg font-medium">Patients</h3>
                       <p className="text-muted-foreground">{doctorPatients.length} active patients</p>
@@ -235,23 +235,25 @@ export default function DoctorDashboard() {
                    <div>
                        <h4 className="text-center font-semibold mb-2">Appointment Status</h4>
                       <ChartContainer config={{}} className="h-[250px] w-full">
-                        <PieChart>
-                          <Pie
-                            data={appointmentStatusChartData}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          >
-                            {appointmentStatusChartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
-                          <Legend />
-                        </PieChart>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={appointmentStatusChartData}
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="value"
+                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            >
+                              {appointmentStatusChartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
                       </ChartContainer>
                   </div>
               </CardContent>
@@ -263,40 +265,42 @@ export default function DoctorDashboard() {
                       <CardTitle>Today's Appointments</CardTitle>
                   </CardHeader>
                   <CardContent>
-                       <Table>
-                          <TableHeader>
-                              <TableRow>
-                                  <TableHead>Time</TableHead>
-                                  <TableHead>Patient</TableHead>
-                                  <TableHead className="w-[150px]">Status</TableHead>
-                              </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                              {todaysAppointments.length > 0 ? todaysAppointments.map(appt => (
-                                <TableRow key={appt.id}>
-                                  <TableCell>{appt.time}</TableCell>
-                                  <TableCell>{appt.patientName}</TableCell>
-                                  <TableCell>
-                                    <Select 
-                                        value={appt.status} 
-                                        onValueChange={(value: "Upcoming" | "Completed" | "Cancelled") => handleStatusChange(appt.id, value)}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Upcoming">Upcoming</SelectItem>
-                                            <SelectItem value="Completed">Completed</SelectItem>
-                                            <SelectItem value="Cancelled">Cancelled</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                  </TableCell>
+                      <div className="overflow-x-auto">
+                         <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Time</TableHead>
+                                    <TableHead>Patient</TableHead>
+                                    <TableHead className="w-[150px]">Status</TableHead>
                                 </TableRow>
-                              )) : (
-                                <TableRow><TableCell colSpan={3} className="text-center">No appointments for today.</TableCell></TableRow>
-                              )}
-                          </TableBody>
-                      </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {todaysAppointments.length > 0 ? todaysAppointments.map(appt => (
+                                  <TableRow key={appt.id}>
+                                    <TableCell>{appt.time}</TableCell>
+                                    <TableCell>{appt.patientName}</TableCell>
+                                    <TableCell>
+                                      <Select 
+                                          value={appt.status} 
+                                          onValueChange={(value: "Upcoming" | "Completed" | "Cancelled") => handleStatusChange(appt.id, value)}
+                                      >
+                                          <SelectTrigger>
+                                              <SelectValue placeholder="Status" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                              <SelectItem value="Upcoming">Upcoming</SelectItem>
+                                              <SelectItem value="Completed">Completed</SelectItem>
+                                              <SelectItem value="Cancelled">Cancelled</SelectItem>
+                                          </SelectContent>
+                                      </Select>
+                                    </TableCell>
+                                  </TableRow>
+                                )) : (
+                                  <TableRow><TableCell colSpan={3} className="text-center">No appointments for today.</TableCell></TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                      </div>
                   </CardContent>
               </Card>
               <Card>
@@ -310,7 +314,7 @@ export default function DoctorDashboard() {
                     </AccordionTrigger>
                     <AccordionContent className="p-6 pt-0">
                         <CardDescription className="mb-4">If no times are selected, you'll be marked as unavailable for the entire day for the chosen dates.</CardDescription>
-                        <div className="flex flex-col lg:flex-row items-start gap-4">
+                        <div className="flex flex-col md:flex-row items-start gap-4">
                            <Calendar
                               mode="multiple"
                               selected={selectedDates}
@@ -361,32 +365,34 @@ export default function DoctorDashboard() {
                       <CardTitle>My Patients</CardTitle>
                   </CardHeader>
                   <CardContent>
-                       <Table>
-                          <TableHeader>
-                              <TableRow>
-                                  <TableHead>Patient</TableHead>
-                                  <TableHead>Email</TableHead>
-                              </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                              {doctorPatients.length > 0 ? doctorPatients.map(patient => (
-                                <TableRow key={patient.id}>
-                                  <TableCell>
-                                    <div className="flex items-center gap-3">
-                                      <Avatar>
-                                        <AvatarImage src={`https://i.pravatar.cc/40?u=${patient.id}`} />
-                                        <AvatarFallback>{getInitials(patient.name)}</AvatarFallback>
-                                      </Avatar>
-                                      <span>{patient.name}</span>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>{patient.email}</TableCell>
+                      <div className="overflow-x-auto">
+                         <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Patient</TableHead>
+                                    <TableHead>Email</TableHead>
                                 </TableRow>
-                              )) : (
-                                <TableRow><TableCell colSpan={2} className="text-center">No patients found.</TableCell></TableRow>
-                              )}
-                          </TableBody>
-                      </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {doctorPatients.length > 0 ? doctorPatients.map(patient => (
+                                  <TableRow key={patient.id}>
+                                    <TableCell>
+                                      <div className="flex items-center gap-3">
+                                        <Avatar>
+                                          <AvatarImage src={`https://i.pravatar.cc/40?u=${patient.id}`} />
+                                          <AvatarFallback>{getInitials(patient.name)}</AvatarFallback>
+                                        </Avatar>
+                                        <span>{patient.name}</span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>{patient.email}</TableCell>
+                                  </TableRow>
+                                )) : (
+                                  <TableRow><TableCell colSpan={2} className="text-center">No patients found.</TableCell></TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                      </div>
                   </CardContent>
               </Card>
         </div>

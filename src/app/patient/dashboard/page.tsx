@@ -72,20 +72,20 @@ export default function PatientDashboard() {
                 </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-2">
                     <CardHeader>
                         <CardTitle>Next Appointment</CardTitle>
                     </CardHeader>
                     <CardContent>
                        {upcomingAppointments.length > 0 ? (
-                           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 rounded-lg bg-secondary">
+                           <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 rounded-lg bg-secondary">
                                <div>
                                   <p className="text-xl font-bold">{upcomingAppointments[0].doctorName}</p>
                                   <p className="text-muted-foreground">{upcomingAppointments[0].department}</p>
                                   <p className="mt-2 font-semibold">{format(new Date(upcomingAppointments[0].date), "PPPP")} at {upcomingAppointments[0].time}</p>
                                </div>
-                                <Button asChild className="mt-4 sm:mt-0">
+                                <Button asChild className="mt-4 md:mt-0">
                                   <Link href="/booking">Reschedule</Link>
                                 </Button>
                            </div>
@@ -116,7 +116,7 @@ export default function PatientDashboard() {
             </div>
             
             <Tabs defaultValue="upcoming">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-1 md:w-1/2 grid-cols-2 mx-auto">
                 <TabsTrigger value="upcoming">Upcoming Appointments</TabsTrigger>
                 <TabsTrigger value="history">Appointment History</TabsTrigger>
               </TabsList>
@@ -127,19 +127,21 @@ export default function PatientDashboard() {
                         <CardDescription>Your scheduled future appointments.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date & Time</TableHead>
-                                    <TableHead>Doctor</TableHead>
-                                    <TableHead>Department</TableHead>
-                                    <TableHead>Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {renderAppointmentRows(upcomingAppointments)}
-                            </TableBody>
-                        </Table>
+                        <div className="overflow-x-auto">
+                          <Table>
+                              <TableHeader>
+                                  <TableRow>
+                                      <TableHead>Date & Time</TableHead>
+                                      <TableHead>Doctor</TableHead>
+                                      <TableHead>Department</TableHead>
+                                      <TableHead>Status</TableHead>
+                                  </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                  {renderAppointmentRows(upcomingAppointments)}
+                              </TableBody>
+                          </Table>
+                        </div>
                          <Button asChild className="mt-4">
                             <Link href="/booking">Book a new appointment</Link>
                         </Button>
@@ -153,19 +155,21 @@ export default function PatientDashboard() {
                         <CardDescription>Your past appointments and their details.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                       <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date & Time</TableHead>
-                                    <TableHead>Doctor</TableHead>
-                                    <TableHead>Department</TableHead>
-                                    <TableHead>Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {renderAppointmentRows(pastAppointments)}
-                            </TableBody>
-                        </Table>
+                       <div className="overflow-x-auto">
+                         <Table>
+                              <TableHeader>
+                                  <TableRow>
+                                      <TableHead>Date & Time</TableHead>
+                                      <TableHead>Doctor</TableHead>
+                                      <TableHead>Department</TableHead>
+                                      <TableHead>Status</TableHead>
+                                  </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                  {renderAppointmentRows(pastAppointments)}
+                              </TableBody>
+                          </Table>
+                        </div>
                     </CardContent>
                 </Card>
               </TabsContent>

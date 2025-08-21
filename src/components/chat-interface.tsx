@@ -76,7 +76,7 @@ export default function ChatInterface() {
 
     return (
         <div className="flex h-[calc(100vh-8rem)] bg-background border-t">
-            <aside className="w-1/3 border-r flex flex-col">
+            <aside className="w-full md:w-1/3 lg:w-1/4 border-r flex-col hidden md:flex">
                 <div className="p-4 border-b">
                     <h2 className="text-xl font-bold">Conversations</h2>
                     <div className="relative mt-4">
@@ -147,7 +147,7 @@ export default function ChatInterface() {
                                     >
                                         <div
                                             className={cn(
-                                                "rounded-lg px-4 py-2 max-w-xs lg:max-w-md relative group",
+                                                "rounded-lg px-4 py-2 max-w-sm md:max-w-md lg:max-w-lg relative group",
                                                 msg.senderId === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-muted'
                                             )}
                                         >
@@ -178,7 +178,7 @@ export default function ChatInterface() {
                         </footer>
                     </>
                 ) : (
-                    <div className="flex items-center justify-center h-full">
+                    <div className="flex-col items-center justify-center h-full hidden md:flex">
                         <p className="text-muted-foreground">Select a conversation to start chatting</p>
                     </div>
                 )}
