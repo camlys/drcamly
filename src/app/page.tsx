@@ -1,3 +1,4 @@
+import React from 'react';
 import AppointmentForm from '@/components/appointment-form';
 import Departments from '@/components/departments';
 import DoctorSearch from '@/components/doctor-search';

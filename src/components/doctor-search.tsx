@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -7,25 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { mockDoctors } from '@/lib/data';
 
-const doctors = [
-  { name: "Dr. Evelyn Reed", specialty: "Cardiology", avatar: "https://placehold.co/100x100.png" },
-  { name: "Dr. Marcus Thorne", specialty: "Neurology", avatar: "https://placehold.co/100x100.png" },
-  { name: "Dr. Lena Petrova", specialty: "Pediatrics", avatar: "https://placehold.co/100x100.png" },
-  { name: "Dr. Kenji Tanaka", specialty: "Orthopedics", avatar: "https://placehold.co/100x100.png" },
-  { name: "Dr. Aisha Khan", specialty: "Ophthalmology", avatar: "https://placehold.co/100x100.png" },
-  { name: "Dr. Samuel Green", specialty: "General Practice", avatar: "https://placehold.co/100x100.png" },
-  { name: "Dr. Clara Oswald", specialty: "Cardiology", avatar: "https://placehold.co/100x100.png" },
-  { name: "Dr. Ben Carter", specialty: "Neurology", avatar: "https://placehold.co/100x100.png" },
-];
-
-const specialties = ["All", "Cardiology", "Neurology", "Pediatrics", "Orthopedics", "Ophthalmology", "General Practice"];
+const specialties = ["All", ...new Set(mockDoctors.map(d => d.specialty))];
 
 export default function DoctorSearch() {
   const [searchTerm, setSearchTerm] = useState('');
   const [specialty, setSpecialty] = useState('All');
 
-  const filteredDoctors = doctors.filter(doctor =>
+  const filteredDoctors = mockDoctors.filter(doctor =>
     doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (specialty === 'All' || doctor.specialty === specialty)
   );
@@ -66,7 +57,7 @@ export default function DoctorSearch() {
               <Card key={index} className="text-center transition-all duration-300 hover:shadow-lg">
                 <CardHeader>
                   <div className="mx-auto w-24 h-24 rounded-full overflow-hidden border-4 border-primary/20">
-                     <Image src={doctor.avatar} alt={`Avatar of ${doctor.name}`} width={100} height={100} data-ai-hint="doctor portrait" />
+                     <Image src={`https://placehold.co/100x100.png?text=${doctor.name.split(' ').map(n=>n[0]).join('')}`} alt={`Avatar of ${doctor.name}`} width={100} height={100} data-ai-hint="doctor portrait" />
                   </div>
                 </CardHeader>
                 <CardContent className="px-2">
@@ -75,7 +66,7 @@ export default function DoctorSearch() {
                 </CardContent>
                 <CardFooter className="justify-center pb-4">
                    <Button asChild variant="outline" className="w-full">
-                    <Link href="#appointment">Book Now</Link>
+                    <Link href={`/#appointment?doctor=${encodeURIComponent(doctor.id)}`}>Book Now</Link>
                   </Button>
                 </CardFooter>
               </Card>

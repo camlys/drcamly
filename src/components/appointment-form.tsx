@@ -1,5 +1,8 @@
+
 "use client";
 
+import React, { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -17,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { mockDoctors } from "@/lib/data";
 
 const appointmentFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -28,20 +32,30 @@ const appointmentFormSchema = z.object({
 
 type AppointmentFormValues = z.infer<typeof appointmentFormSchema>;
 
-const doctors = ["Dr. Evelyn Reed (Cardiology)", "Dr. Marcus Thorne (Neurology)", "Dr. Lena Petrova (Pediatrics)", "Dr. Kenji Tanaka (Orthopedics)"];
 const defaultValues: Partial<AppointmentFormValues> = { name: "", email: "" };
 
-export default function AppointmentForm() {
+function AppointmentFormContent() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  
   const form = useForm<AppointmentFormValues>({
     resolver: zodResolver(appointmentFormSchema),
     defaultValues,
   });
 
+  useEffect(() => {
+    const doctorId = searchParams.get("doctor");
+    if (doctorId && mockDoctors.some(d => d.id === doctorId)) {
+      form.setValue("doctor", doctorId);
+    }
+  }, [searchParams, form]);
+
+
   function onSubmit(data: AppointmentFormValues) {
+    const doctor = mockDoctors.find(d => d.id === data.doctor);
     toast({
       title: "Appointment Scheduled!",
-      description: `Thank you, ${data.name}. Your appointment with ${data.doctor} on ${format(data.date, "PPP")} has been successfully booked.`,
+      description: `Thank you, ${data.name}. Your appointment with ${doctor?.name} on ${format(data.date, "PPP")} has been successfully booked.`,
       variant: "default",
       className: "bg-accent text-accent-foreground border-0",
     });
@@ -70,10 +84,10 @@ export default function AppointmentForm() {
                     <FormField control={form.control} name="doctor" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Doctor</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                           <FormControl><SelectTrigger><SelectValue placeholder="Select a doctor" /></SelectTrigger></FormControl>
                           <SelectContent>
-                            {doctors.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                            {mockDoctors.map(d => <SelectItem key={d.id} value={d.id}>{d.name} ({d.specialty})</SelectItem>)}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -114,4 +128,13 @@ export default function AppointmentForm() {
       </div>
     </section>
   );
+}
+
+// Wrap with Suspense for components that use useSearchParams
+export default function AppointmentForm() {
+    return (
+        <React.Suspense fallback={<div>Loading...</div>}>
+            <AppointmentFormContent />
+        </React.Suspense>
+    )
 }
