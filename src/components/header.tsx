@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Stethoscope, Menu, LogIn, User, LogOut, Bell, MessageSquare, CalendarCheck, UserPlus,ClipboardUser } from "lucide-react";
+import { Stethoscope, Menu, LogIn, User, LogOut, Bell, MessageSquare, CalendarCheck, UserPlus, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -218,7 +218,7 @@ export default function Header() {
                     </SheetClose>
                      <SheetClose asChild>
                         <Link href="/doctor/login" className="flex items-center gap-2 px-2 py-2 text-lg font-medium transition-colors hover:text-primary">
-                           <ClipboardUser /> Doctor Login
+                           <ClipboardList /> Doctor Login
                         </Link>
                     </SheetClose>
                     <hr className="my-2"/>
