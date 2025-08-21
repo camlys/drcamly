@@ -6,32 +6,49 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
-import { mockAppointments, mockPatients, Appointment, Patient } from "@/lib/data";
+import { mockAppointments, mockPatients, Appointment, Patient, mockDoctors, timeSlots, Doctor } from "@/lib/data";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import type { DateRange } from "react-day-picker";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { format, formatISO, startOfDay } from "date-fns";
 
 export default function DoctorDashboard() {
   const { authState } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
-  // Mocking a logged-in doctor.
   const currentDoctorId = "doc1";
   
   const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
-  const [unavailableDates, setUnavailableDates] = useState<DateRange | undefined>();
+  const [doctors, setDoctors] = useState<Doctor[]>(mockDoctors);
+  
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  
+  const currentDoctor = useMemo(() => doctors.find(d => d.id === currentDoctorId), [doctors, currentDoctorId]);
+
+  const unavailableTimesForSelectedDate = useMemo(() => {
+    if (!selectedDate || !currentDoctor) return [];
+    const dateString = formatISO(startOfDay(selectedDate), { representation: 'date' });
+    const unavailability = currentDoctor.unavailability.find(u => u.date === dateString);
+    return unavailability ? unavailability.times : [];
+  }, [selectedDate, currentDoctor]);
+
+  const [selectedUnavailableTimes, setSelectedUnavailableTimes] = useState<string[]>([]);
+  
+  useEffect(() => {
+    setSelectedUnavailableTimes(unavailableTimesForSelectedDate);
+  }, [unavailableTimesForSelectedDate]);
+
 
   const { todaysAppointments, doctorPatients } = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfDay(new Date());
 
     const todaysAppts = appointments.filter(a => {
-        const apptDate = new Date(a.date);
-        apptDate.setHours(0, 0, 0, 0);
+        const apptDate = startOfDay(new Date(a.date));
         return a.doctorId === currentDoctorId && apptDate.getTime() === today.getTime();
     });
     
@@ -56,19 +73,48 @@ export default function DoctorDashboard() {
     });
   };
 
+  const handleTimeSelectionChange = (time: string, checked: boolean) => {
+    setSelectedUnavailableTimes(prev => {
+        if(checked) {
+            return [...prev, time];
+        } else {
+            return prev.filter(t => t !== time);
+        }
+    });
+  }
+
   const handleSetUnavailability = () => {
-    if(unavailableDates) {
+    if(!selectedDate || !currentDoctor) {
         toast({
-            title: "Availability Updated",
-            description: "Your unavailable dates have been saved.",
-        });
-    } else {
-        toast({
-            title: "No Dates Selected",
-            description: "Please select a date range to mark as unavailable.",
+            title: "Error",
+            description: "Please select a doctor and date.",
             variant: "destructive",
         })
+        return;
     }
+    const dateString = formatISO(startOfDay(selectedDate), { representation: 'date' });
+
+    setDoctors(prevDoctors => {
+        return prevDoctors.map(doc => {
+            if(doc.id === currentDoctorId) {
+                const otherUnavailability = doc.unavailability.filter(u => u.date !== dateString);
+                const newUnavailability = selectedUnavailableTimes.length > 0 
+                    ? [...otherUnavailability, { date: dateString, times: selectedUnavailableTimes }]
+                    : otherUnavailability;
+                
+                // This is where you would typically make an API call to save the data
+                console.log("Saving unavailability for", doc.name, newUnavailability);
+                
+                return { ...doc, unavailability: newUnavailability };
+            }
+            return doc;
+        });
+    });
+
+    toast({
+        title: "Availability Updated",
+        description: `Your unavailable slots for ${format(selectedDate, 'PPP')} have been saved.`,
+    });
   }
 
   if (authState.loading || !authState.isAuthenticated || authState.userType !== 'doctor') {
@@ -88,7 +134,7 @@ export default function DoctorDashboard() {
           </div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Welcome, {mockAppointments.find(a => a.doctorId === currentDoctorId)?.doctorName || 'Doctor'}!</CardTitle>
+                    <CardTitle>Welcome, {currentDoctor?.name || 'Doctor'}!</CardTitle>
                     <CardDescription>Manage your patients and appointments.</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -149,17 +195,34 @@ export default function DoctorDashboard() {
                <Card>
                   <CardHeader>
                       <CardTitle>Set Availability</CardTitle>
-                      <CardDescription>Select dates you are unavailable.</CardDescription>
+                      <CardDescription>Select a date and mark the times you are unavailable.</CardDescription>
                   </CardHeader>
-                  <CardContent className="flex flex-col items-center gap-4">
+                  <CardContent className="flex flex-col lg:flex-row items-start gap-4">
                        <Calendar
-                          mode="range"
-                          selected={unavailableDates}
-                          onSelect={setUnavailableDates}
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={setSelectedDate}
                           className="rounded-md border"
                           disabled={{ before: new Date() }}
                         />
-                      <Button onClick={handleSetUnavailability} className="w-full">Save Unavailability</Button>
+                        <div className="flex-1 w-full">
+                            <h4 className="font-medium mb-2">Time Slots for {selectedDate ? format(selectedDate, "PPP") : "..."}</h4>
+                            <div className="grid grid-cols-2 gap-2">
+                                {timeSlots.map(time => (
+                                    <div key={time} className="flex items-center space-x-2">
+                                        <Checkbox 
+                                            id={`time-${time.replace(/\s/g, '')}`}
+                                            checked={selectedUnavailableTimes.includes(time)}
+                                            onCheckedChange={(checked) => handleTimeSelectionChange(time, !!checked)}
+                                        />
+                                        <Label htmlFor={`time-${time.replace(/\s/g, '')}`} className="text-sm font-normal">
+                                            {time}
+                                        </Label>
+                                    </div>
+                                ))}
+                            </div>
+                           <Button onClick={handleSetUnavailability} className="w-full mt-4">Save Unavailability</Button>
+                        </div>
                   </CardContent>
               </Card>
             </div>
@@ -200,3 +263,4 @@ export default function DoctorDashboard() {
       </main>
     </div>
   );
+}

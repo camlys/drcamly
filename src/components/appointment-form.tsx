@@ -1,13 +1,13 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, formatISO, startOfDay } from "date-fns";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils";
@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { mockDoctors, addAppointment, mockPatients } from "@/lib/data";
+import { mockDoctors, addAppointment, mockPatients, timeSlots, mockAppointments } from "@/lib/data";
 import { useAuth } from "@/context/auth-context";
 
 const appointmentFormSchema = z.object({
@@ -36,11 +36,6 @@ type AppointmentFormValues = z.infer<typeof appointmentFormSchema>;
 
 const defaultValues: Partial<AppointmentFormValues> = { name: "", email: "" };
 
-const timeSlots = [
-    "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
-    "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM"
-];
-
 function AppointmentFormContent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -52,6 +47,39 @@ function AppointmentFormContent() {
     defaultValues,
   });
 
+  const selectedDoctorId = form.watch("doctor");
+  const selectedDate = form.watch("date");
+
+  const availableTimeSlots = useMemo(() => {
+    if (!selectedDoctorId || !selectedDate) return [];
+
+    const doctor = mockDoctors.find(d => d.id === selectedDoctorId);
+    if (!doctor) return [];
+
+    const dateString = formatISO(startOfDay(selectedDate), { representation: 'date' });
+    const isoDateString = startOfDay(selectedDate).toISOString();
+    
+    // Get doctor's specific unavailable times for that day
+    const unavailableTimes = doctor.unavailability.find(u => u.date === dateString)?.times || [];
+    
+    // Get times already booked for that doctor on that day
+    const bookedTimes = mockAppointments
+        .filter(a => a.doctorId === selectedDoctorId && startOfDay(new Date(a.date)).toISOString() === isoDateString)
+        .map(a => a.time);
+
+    // Combine and filter the original time slots
+    return timeSlots.filter(time => !unavailableTimes.includes(time) && !bookedTimes.includes(time));
+  }, [selectedDoctorId, selectedDate]);
+  
+  useEffect(() => {
+    // Reset time field if the available slots change and the current time is no longer valid
+    const currentTime = form.getValues("time");
+    if(currentTime && !availableTimeSlots.includes(currentTime)){
+      form.setValue("time", "");
+    }
+  }, [availableTimeSlots, form]);
+
+
   useEffect(() => {
     const doctorId = searchParams.get("doctor");
     if (doctorId && mockDoctors.some(d => d.id === doctorId)) {
@@ -60,9 +88,7 @@ function AppointmentFormContent() {
   }, [searchParams, form]);
 
   useEffect(() => {
-    // Pre-fill form if user is logged in as a patient
     if (authState.isAuthenticated && authState.userType === 'patient') {
-      // Using first mock patient as example, in real app, fetch patient data
       const patient = mockPatients[0]; 
       form.setValue('name', patient.name);
       form.setValue('email', patient.email);
@@ -77,7 +103,6 @@ function AppointmentFormContent() {
         return;
     }
 
-    // In a real app, you'd get the logged-in patient's ID
     const patientId = authState.isAuthenticated && authState.userType === 'patient' ? "pat1" : "new-patient";
 
     addAppointment({
@@ -98,7 +123,6 @@ function AppointmentFormContent() {
       className: "bg-accent text-accent-foreground border-0",
     });
     form.reset(defaultValues);
-     // Reset doctor field if it was set from URL
     const doctorId = searchParams.get("doctor");
     if (doctorId) {
         form.setValue("doctor", "");
@@ -159,10 +183,14 @@ function AppointmentFormContent() {
                       <FormField control={form.control} name="time" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Appointment Time</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select a time" /></SelectTrigger></FormControl>
+                          <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value} disabled={!selectedDoctorId || !selectedDate}>
+                            <FormControl><SelectTrigger><SelectValue placeholder={!selectedDoctorId || !selectedDate ? "Select doctor and date first" : "Select a time"} /></SelectTrigger></FormControl>
                             <SelectContent>
-                              {timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                              {availableTimeSlots.length > 0 ? (
+                                availableTimeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)
+                              ) : (
+                                <SelectItem value="no-slots" disabled>No available slots</SelectItem>
+                              )}
                             </SelectContent>
                           </Select>
                           <FormMessage />
