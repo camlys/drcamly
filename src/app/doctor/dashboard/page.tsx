@@ -75,6 +75,14 @@ export default function DoctorDashboard() {
     });
   }
 
+  const handleSelectAllTimes = (checked: boolean) => {
+    if (checked) {
+      setSelectedUnavailableTimes(timeSlots);
+    } else {
+      setSelectedUnavailableTimes([]);
+    }
+  }
+
   const handleSetUnavailability = () => {
     if(!dateRange?.from || !currentDoctor) {
         toast({
@@ -216,7 +224,19 @@ export default function DoctorDashboard() {
                           numberOfMonths={1}
                         />
                         <div className="flex-1 w-full">
-                            <h4 className="font-medium mb-2">Time Slots</h4>
+                            <div className="flex items-center justify-between mb-3">
+                               <h4 className="font-medium">Time Slots</h4>
+                                <div className="flex items-center space-x-2">
+                                     <Checkbox 
+                                        id="select-all-times"
+                                        onCheckedChange={(checked) => handleSelectAllTimes(!!checked)}
+                                        checked={selectedUnavailableTimes.length === timeSlots.length}
+                                     />
+                                     <Label htmlFor="select-all-times" className="text-sm font-normal">
+                                        Select All
+                                    </Label>
+                                </div>
+                            </div>
                             <p className="text-sm text-muted-foreground mb-3">Select specific times to mark as unavailable within the chosen date range.</p>
                             <div className="grid grid-cols-2 gap-2">
                                 {timeSlots.map(time => (
@@ -275,5 +295,3 @@ export default function DoctorDashboard() {
     </div>
   );
 }
-
-    
