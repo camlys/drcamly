@@ -24,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { mockDoctors, addAppointment, updateAppointment, mockPatients, timeSlots, mockAppointments } from "@/lib/data";
 import { useAuth } from "@/context/auth-context";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { sendEmail } from "@/ai/flows/send-email-flow";
 
 const appointmentFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -123,7 +124,7 @@ function AppointmentFormContent() {
   }, [authState, form, isEditing]);
 
 
-  function onSubmit(data: AppointmentFormValues) {
+  async function onSubmit(data: AppointmentFormValues) {
     const doctor = mockDoctors.find(d => d.id === data.doctor);
     if (!doctor) {
         toast({ title: "Error", description: "Selected doctor not found.", variant: "destructive" });
@@ -145,6 +146,20 @@ function AppointmentFormContent() {
             consultationFee: doctor.consultationFee,
             notes: data.message,
         });
+        
+        await sendEmail({
+            to: data.email,
+            subject: 'Your Appointment has been Rescheduled',
+            body: `
+                <h1>Appointment Rescheduled</h1>
+                <p>Hi ${data.name},</p>
+                <p>This is a confirmation that your appointment with <strong>${doctor.name}</strong> has been successfully rescheduled.</p>
+                <p><strong>New Date:</strong> ${format(data.date, "PPPP")}</p>
+                <p><strong>New Time:</strong> ${data.time}</p>
+                <p>Thank you for choosing Dr.Camly.</p>
+            `,
+        });
+
         toast({
             title: "Appointment Updated!",
             description: `Your appointment with ${doctor?.name} on ${format(data.date, "PPP")} has been successfully rescheduled.`,
@@ -164,6 +179,20 @@ function AppointmentFormContent() {
             consultationFee: doctor.consultationFee,
             notes: data.message,
         });
+
+        await sendEmail({
+            to: data.email,
+            subject: 'Appointment Confirmation',
+            body: `
+                <h1>Appointment Confirmed!</h1>
+                <p>Hi ${data.name},</p>
+                <p>This is a confirmation that your ${data.consultationType} appointment with <strong>${doctor.name}</strong> has been successfully booked.</p>
+                <p><strong>Date:</strong> ${format(data.date, "PPPP")}</p>
+                <p><strong>Time:</strong> ${data.time}</p>
+                <p>Thank you for choosing Dr.Camly.</p>
+            `,
+        });
+
         toast({
             title: "Appointment Scheduled!",
             description: `Thank you, ${data.name}. Your ${data.consultationType} appointment with ${doctor?.name} on ${format(data.date, "PPP")} at ${data.time} has been successfully booked.`,
