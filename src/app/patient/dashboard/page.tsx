@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { format, differenceInYears } from "date-fns";
+import { format, differenceInYears, formatDistanceToNowStrict } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
@@ -13,7 +13,7 @@ import { mockAppointments, Appointment, mockPatients, updatePatient, Patient, ad
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Cake, Phone, User, Pencil, CalendarIcon, Camera, Video, Building, CreditCard, Star } from "lucide-react";
+import { MessageSquare, Cake, Phone, User, Pencil, CalendarIcon, Camera, Video, Building, CreditCard, Star, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -59,6 +59,8 @@ export default function PatientDashboard() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedAppointmentForFeedback, setSelectedAppointmentForFeedback] = useState<Appointment | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState('');
+
 
   const currentPatient = useMemo(() => patients.find(p => p.id === currentPatientId), [patients, currentPatientId]);
   
@@ -68,6 +70,49 @@ export default function PatientDashboard() {
     const past = userAppointments.filter(a => a.status !== 'Upcoming').sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return { upcomingAppointments: upcoming, pastAppointments: past };
   }, [currentPatientId]);
+  
+    useEffect(() => {
+    if (upcomingAppointments.length > 0) {
+      const nextAppointment = upcomingAppointments[0];
+      const appointmentDateTime = new Date(`${nextAppointment.date.slice(0, 10)}T${convertTimeTo24Hour(nextAppointment.time)}`);
+
+      const calculateTimeRemaining = () => {
+        const now = new Date();
+        const difference = appointmentDateTime.getTime() - now.getTime();
+
+        if (difference <= 0) {
+          setTimeRemaining("Your appointment is starting now.");
+          clearInterval(interval);
+          return;
+        }
+
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+        setTimeRemaining(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+      };
+
+      const interval = setInterval(calculateTimeRemaining, 1000);
+      calculateTimeRemaining(); 
+
+      return () => clearInterval(interval);
+    }
+  }, [upcomingAppointments]);
+
+  const convertTimeTo24Hour = (time: string) => {
+    const [timePart, ampm] = time.split(' ');
+    let [hours, minutes] = timePart.split(':');
+    if (ampm === 'PM' && hours !== '12') {
+      hours = String(parseInt(hours, 10) + 12);
+    }
+    if (ampm === 'AM' && hours === '12') {
+      hours = '00';
+    }
+    return `${hours.padStart(2, '0')}:${minutes}:00`;
+  };
+
 
   const profileForm = useForm<PatientProfileValues>({
     resolver: zodResolver(patientProfileSchema),
@@ -366,19 +411,29 @@ export default function PatientDashboard() {
                     </CardHeader>
                     <CardContent>
                        {upcomingAppointments.length > 0 ? (
-                           <div className="flex flex-col items-start justify-between p-4 rounded-lg bg-secondary md:flex-row md:items-center">
-                               <div>
-                                  <p className="text-xl font-bold">{upcomingAppointments[0].doctorName}</p>
-                                  <p className="text-muted-foreground">{upcomingAppointments[0].department}</p>
-                                  <p className="mt-2 font-semibold">{format(new Date(upcomingAppointments[0].date), "PPPP")} at {upcomingAppointments[0].time}</p>
-                                   <div className="flex items-center gap-2 mt-2">
-                                        {upcomingAppointments[0].consultationType === 'Online' ? <Video className="h-5 w-5 text-primary" /> : <Building className="h-5 w-5 text-primary" />}
-                                        <span className="font-medium">{upcomingAppointments[0].consultationType}</span>
-                                    </div>
+                           <div className="p-4 space-y-4 rounded-lg bg-secondary">
+                               <div className="flex flex-col items-start justify-between md:flex-row md:items-center">
+                                   <div>
+                                      <p className="text-xl font-bold">{upcomingAppointments[0].doctorName}</p>
+                                      <p className="text-muted-foreground">{upcomingAppointments[0].department}</p>
+                                      <p className="mt-2 font-semibold">{format(new Date(upcomingAppointments[0].date), "PPPP")} at {upcomingAppointments[0].time}</p>
+                                       <div className="flex items-center gap-2 mt-2">
+                                            {upcomingAppointments[0].consultationType === 'Online' ? <Video className="h-5 w-5 text-primary" /> : <Building className="h-5 w-5 text-primary" />}
+                                            <span className="font-medium">{upcomingAppointments[0].consultationType}</span>
+                                        </div>
+                                   </div>
+                                    <Button asChild className="mt-4 md:mt-0">
+                                      <Link href={`/booking?rescheduleId=${upcomingAppointments[0].id}`}>Reschedule</Link>
+                                    </Button>
                                </div>
-                                <Button asChild className="mt-4 md:mt-0">
-                                  <Link href={`/booking?rescheduleId=${upcomingAppointments[0].id}`}>Reschedule</Link>
-                                </Button>
+                               {timeRemaining && (
+                                <div className="p-4 text-center border-t border-primary/20">
+                                    <div className="flex items-center justify-center gap-2 text-primary">
+                                        <Clock className="w-6 h-6" />
+                                        <p className="text-lg font-semibold tracking-widest">{timeRemaining}</p>
+                                    </div>
+                                </div>
+                               )}
                            </div>
                        ) : (
                            <div className="p-4 text-center rounded-lg bg-secondary">
