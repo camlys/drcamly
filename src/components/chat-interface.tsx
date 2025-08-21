@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { mockConversations, mockMessages, ChatConversation, ChatMessage } from '@/lib/data';
-import { Send, Search } from 'lucide-react';
+import { Send, Search, Check, CheckCheck } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 export default function ChatInterface() {
     const { authState } = useAuth();
@@ -24,6 +25,7 @@ export default function ChatInterface() {
 
     useEffect(() => {
         if (selectedConversation) {
+            // In a real app, you would fetch messages for the conversation
             setMessages(mockMessages.filter(m => m.conversationId === selectedConversation.id));
         } else {
             setMessages([]);
@@ -43,9 +45,16 @@ export default function ChatInterface() {
             senderId: currentUser.id,
             text: newMessage,
             timestamp: new Date().toISOString(),
+            read: false,
         };
 
         setMessages(prev => [...prev, newMsg]);
+        
+        // Also update the conversation's last message for immediate feedback
+        setConversations(prev => prev.map(c => 
+            c.id === selectedConversation.id ? { ...c, lastMessage: newMessage } : c
+        ));
+
         setNewMessage('');
     };
     
@@ -59,6 +68,10 @@ export default function ChatInterface() {
 
     const handleSelectConversation = (conversation: ChatConversation) => {
         setSelectedConversation(conversation);
+        // Mark messages as read
+        setMessages(prev => prev.map(m => m.senderId !== currentUser.id ? { ...m, read: true } : m));
+        // Reset unread count in the UI
+        setConversations(prev => prev.map(c => c.id === conversation.id ? { ...c, unreadCount: 0 } : c));
     };
 
     return (
@@ -89,14 +102,18 @@ export default function ChatInterface() {
                                 )}
                                 onClick={() => handleSelectConversation(convo)}
                             >
-                                <Avatar>
-                                    <AvatarImage src={`https://i.pravatar.cc/40?u=${otherParticipant.id}`} />
-                                    <AvatarFallback>{getInitials(otherParticipant.name)}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                    <p className="font-semibold">{otherParticipant.name}</p>
+                                <div className="relative">
+                                    <Avatar>
+                                        <AvatarImage src={`https://i.pravatar.cc/40?u=${otherParticipant.id}`} />
+                                        <AvatarFallback>{getInitials(otherParticipant.name)}</AvatarFallback>
+                                    </Avatar>
+                                    {otherParticipant.online && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />}
+                                </div>
+                                <div className="flex-1 overflow-hidden">
+                                    <p className="font-semibold truncate">{otherParticipant.name}</p>
                                     <p className="text-sm text-muted-foreground truncate">{convo.lastMessage}</p>
                                 </div>
+                                {convo.unreadCount > 0 && <Badge className="bg-primary text-primary-foreground">{convo.unreadCount}</Badge>}
                             </div>
                         )
                     })}
@@ -106,11 +123,17 @@ export default function ChatInterface() {
                 {selectedConversation ? (
                     <>
                         <header className="p-4 border-b flex items-center gap-3">
-                            <Avatar>
-                                <AvatarImage src={`https://i.pravatar.cc/40?u=${selectedConversation.participants.find(p=>p.id !== currentUser.id)?.id}`} />
-                                <AvatarFallback>{getInitials(selectedConversation.participants.find(p=>p.id !== currentUser.id)?.name || '')}</AvatarFallback>
-                            </Avatar>
-                            <h2 className="text-lg font-semibold">{selectedConversation.participants.find(p => p.id !== currentUser.id)?.name}</h2>
+                             <div className="relative">
+                                <Avatar>
+                                    <AvatarImage src={`https://i.pravatar.cc/40?u=${selectedConversation.participants.find(p=>p.id !== currentUser.id)?.id}`} />
+                                    <AvatarFallback>{getInitials(selectedConversation.participants.find(p=>p.id !== currentUser.id)?.name || '')}</AvatarFallback>
+                                </Avatar>
+                                {selectedConversation.participants.find(p => p.id !== currentUser.id)?.online && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />}
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-semibold">{selectedConversation.participants.find(p => p.id !== currentUser.id)?.name}</h2>
+                                <p className="text-xs text-muted-foreground">{selectedConversation.participants.find(p => p.id !== currentUser.id)?.online ? 'Online' : 'Offline'}</p>
+                            </div>
                         </header>
                         <ScrollArea className="flex-1 p-6">
                             <div className="space-y-4">
@@ -124,11 +147,16 @@ export default function ChatInterface() {
                                     >
                                         <div
                                             className={cn(
-                                                "rounded-lg px-4 py-2 max-w-xs lg:max-w-md",
+                                                "rounded-lg px-4 py-2 max-w-xs lg:max-w-md relative group",
                                                 msg.senderId === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-muted'
                                             )}
                                         >
                                             <p>{msg.text}</p>
+                                            {msg.senderId === currentUser.id && (
+                                                <div className="absolute -bottom-4 right-1 flex items-center">
+                                                    {msg.read ? <CheckCheck className="h-4 w-4 text-blue-500" /> : <Check className="h-4 w-4 text-muted-foreground" />}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

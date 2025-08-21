@@ -29,6 +29,7 @@ export type ChatParticipant = {
     id: string;
     name: string;
     type: 'doctor' | 'patient';
+    online: boolean;
 }
 
 export type ChatMessage = {
@@ -37,6 +38,7 @@ export type ChatMessage = {
     senderId: string;
     text: string;
     timestamp: string;
+    read: boolean;
 }
 
 export type ChatConversation = {
@@ -153,12 +155,12 @@ export const addAppointment = (appointment: Omit<Appointment, 'id' | 'status'>) 
   return newAppointment;
 };
 
-export const mockConversations: ChatConversation[] = [
+export let mockConversations: ChatConversation[] = [
     {
         id: 'convo1',
         participants: [
-            { id: 'pat1', name: 'John Doe', type: 'patient' },
-            { id: 'doc1', name: 'Dr. Evelyn Reed', type: 'doctor' }
+            { id: 'pat1', name: 'John Doe', type: 'patient', online: true },
+            { id: 'doc1', name: 'Dr. Evelyn Reed', type: 'doctor', online: true }
         ],
         lastMessage: 'Thank you, Doctor!',
         lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
@@ -167,8 +169,8 @@ export const mockConversations: ChatConversation[] = [
     {
         id: 'convo2',
         participants: [
-            { id: 'pat1', name: 'John Doe', type: 'patient' },
-            { id: 'doc2', name: 'Dr. Marcus Thorne', type: 'doctor' }
+            { id: 'pat1', name: 'John Doe', type: 'patient', online: true },
+            { id: 'doc2', name: 'Dr. Marcus Thorne', type: 'doctor', online: false }
         ],
         lastMessage: 'I have a follow-up question about my prescription.',
         lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
@@ -177,8 +179,8 @@ export const mockConversations: ChatConversation[] = [
     {
         id: 'convo3',
         participants: [
-            { id: 'pat2', name: 'Jane Smith', type: 'patient' },
-            { id: 'doc1', name: 'Dr. Evelyn Reed', type: 'doctor' }
+            { id: 'pat2', name: 'Jane Smith', type: 'patient', online: false },
+            { id: 'doc1', name: 'Dr. Evelyn Reed', type: 'doctor', online: true }
         ],
         lastMessage: 'See you next week.',
         lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
@@ -186,10 +188,10 @@ export const mockConversations: ChatConversation[] = [
     }
 ];
 
-export const mockMessages: ChatMessage[] = [
-    { id: 'msg1', conversationId: 'convo1', senderId: 'doc1', text: 'Your test results are back and everything looks normal.', timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString() },
-    { id: 'msg2', conversationId: 'convo1', senderId: 'pat1', text: 'That is great news!', timestamp: new Date(Date.now() - 1000 * 60 * 8).toISOString() },
-    { id: 'msg3', conversationId: 'convo1', senderId: 'pat1', text: 'Thank you, Doctor!', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
-    { id: 'msg4', conversationId: 'convo2', senderId: 'doc2', text: 'Hello, how can I help you?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString() },
-    { id: 'msg5', conversationId: 'convo2', senderId: 'pat1', text: 'I have a follow-up question about my prescription.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() }
+export let mockMessages: ChatMessage[] = [
+    { id: 'msg1', conversationId: 'convo1', senderId: 'doc1', text: 'Your test results are back and everything looks normal.', timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(), read: true },
+    { id: 'msg2', conversationId: 'convo1', senderId: 'pat1', text: 'That is great news!', timestamp: new Date(Date.now() - 1000 * 60 * 8).toISOString(), read: true },
+    { id: 'msg3', conversationId: 'convo1', senderId: 'pat1', text: 'Thank you, Doctor!', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), read: false },
+    { id: 'msg4', conversationId: 'convo2', senderId: 'doc2', text: 'Hello, how can I help you?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString(), read: true },
+    { id: 'msg5', conversationId: 'convo2', senderId: 'pat1', text: 'I have a follow-up question about my prescription.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), read: false }
 ];
