@@ -8,22 +8,22 @@ import Autoplay from "embla-carousel-autoplay";
 const testimonials = [
   {
     name: "Sarah L.",
-    quote: "The care I received at CamlyCare was exceptional. The doctors and nurses were incredibly attentive and made me feel comfortable throughout my stay. I can't thank them enough.",
+    quote: "The care I received at Dr.Camly was exceptional. The doctors and nurses were incredibly attentive and made me feel comfortable throughout my stay. I can't thank them enough.",
     avatar: "https://placehold.co/80x80.png"
   },
   {
     name: "Michael B.",
-    quote: "Booking an appointment online was so easy and convenient. The staff was professional and the facilities are top-notch. Highly recommend CamlyCare.",
+    quote: "Booking an appointment online was so easy and convenient. The staff was professional and the facilities are top-notch. Highly recommend Dr.Camly.",
     avatar: "https://placehold.co/80x80.png"
   },
   {
     name: "Jessica P.",
-    quote: "Dr. Reed is a fantastic cardiologist. She took the time to explain everything to me and answered all my questions. I feel like I'm in great hands at CamlyCare.",
+    quote: "Dr. Reed is a fantastic cardiologist. She took the time to explain everything to me and answered all my questions. I feel like I'm in great hands at Dr.Camly.",
     avatar: "https://placehold.co/80x80.png"
   },
   {
     name: "David C.",
-    quote: "From the front desk to the medical team, everyone was friendly and efficient. A truly positive hospital experience. CamlyCare is setting a new standard for patient care.",
+    quote: "From the front desk to the medical team, everyone was friendly and efficient. A truly positive hospital experience. Dr.Camly is setting a new standard for patient care.",
     avatar: "https://placehold.co/80x80.png"
   }
 ];

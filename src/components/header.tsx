@@ -35,7 +35,7 @@ export default function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2 font-bold text-xl">
           <Stethoscope className="h-6 w-6 text-primary" />
-          <span>CamlyCare</span>
+          <span>Dr.Camly</span>
         </Link>
         <nav className="hidden md:flex items-center gap-4 lg:gap-6 text-sm font-medium">
           {navItems.map((item) => (
@@ -103,7 +103,7 @@ export default function Header() {
             <div className="grid gap-4 py-6">
               <Link href="/" className="flex items-center gap-2 font-bold text-xl mb-4">
                 <Stethoscope className="h-6 w-6 text-primary" />
-                <span>CamlyCare</span>
+                <span>Dr.Camly</span>
               </Link>
               <nav className="grid gap-2">
                 {navItems.map((item) => (

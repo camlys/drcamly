@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="flex flex-col gap-2 md:col-span-1">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl mb-2">
             <Stethoscope className="h-6 w-6 text-primary" />
-            <span>CamlyCare</span>
+            <span>Dr.Camly</span>
           </Link>
           <p className="text-muted-foreground text-sm">
             Providing exceptional healthcare with compassion and expertise. Your health is our mission.
@@ -34,13 +34,13 @@ export default function Footer() {
           <address className="not-italic text-sm text-muted-foreground space-y-2">
             <p>123 Health St, Medville, MD 12345</p>
             <p>Phone: (123) 456-7890</p>
-            <p>Email: contact@camlycare.com</p>
+            <p>Email: contact@drcamly.com</p>
           </address>
         </div>
       </div>
       <div className="border-t">
         <div className="container mx-auto px-4 md:px-6 py-4 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} CamlyCare. All Rights Reserved.
+          © {new Date().getFullYear()} Dr.Camly. All Rights Reserved.
         </div>
       </div>
     </footer>

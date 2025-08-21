@@ -10,7 +10,7 @@ export default function Hero() {
             Compassionate Care, Advanced Medicine.
           </h1>
           <p className="mt-6 text-lg md:text-xl text-white/90 max-w-2xl" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}}>
-            Welcome to CamlyCare, where our dedicated team provides exceptional healthcare services with a personal touch.
+            Welcome to Dr.Camly, where our dedicated team provides exceptional healthcare services with a personal touch.
           </p>
           <div className="mt-8">
             <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 animate-pulse">
