@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -45,6 +45,7 @@ function AppointmentFormContent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const { authState } = useAuth();
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   const form = useForm<AppointmentFormValues>({
     resolver: zodResolver(appointmentFormSchema),
@@ -139,7 +140,7 @@ function AppointmentFormContent() {
                       <FormField control={form.control} name="date" render={({ field }) => (
                         <FormItem className="flex flex-col">
                           <FormLabel>Appointment Date</FormLabel>
-                          <Popover>
+                          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                             <PopoverTrigger asChild>
                               <FormControl>
                                 <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
@@ -149,7 +150,7 @@ function AppointmentFormContent() {
                               </FormControl>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))} initialFocus />
+                              <Calendar mode="single" selected={field.value} onSelect={(date) => { field.onChange(date); setIsCalendarOpen(false); }} disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))} initialFocus />
                             </PopoverContent>
                           </Popover>
                           <FormMessage />
