@@ -19,7 +19,12 @@ const signupFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Please enter a valid email address."),
   specialty: z.string({ required_error: "Please select a specialty." }),
-  password: z.string().min(8, "Password must be at least 8 characters."),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters.")
+    .refine((password) => /[a-z]/.test(password), { message: "Password must contain at least one lowercase letter."})
+    .refine((password) => /[A-Z]/.test(password), { message: "Password must contain at least one uppercase letter."})
+    .refine((password) => /[0-9]/.test(password), { message: "Password must contain at least one number."})
+    .refine((password) => /[\W_]/.test(password), { message: "Password must contain at least one special character."}),
 });
 
 type SignupFormValues = z.infer<typeof signupFormSchema>;
