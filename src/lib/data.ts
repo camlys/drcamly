@@ -1,5 +1,4 @@
 
-
 export type Appointment = {
   id: string;
   patientName: string;
@@ -43,7 +42,7 @@ export const mockPatients: Patient[] = [
 ];
 
 
-export const mockAppointments: Appointment[] = [
+export let mockAppointments: Appointment[] = [
   {
     id: "appt1",
     patientId: "pat1",
@@ -113,3 +112,15 @@ export const mockAppointments: Appointment[] = [
     notes: "Prescribed new medication."
   },
 ];
+
+// Function to add a new appointment
+export const addAppointment = (appointment: Omit<Appointment, 'id' | 'status' | 'time'>) => {
+  const newAppointment: Appointment = {
+    ...appointment,
+    id: `appt${mockAppointments.length + 1}`,
+    time: "3:30 PM", // Placeholder time, can be improved later
+    status: 'Upcoming',
+  };
+  mockAppointments.push(newAppointment);
+  return newAppointment;
+};

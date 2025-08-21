@@ -20,7 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { mockDoctors } from "@/lib/data";
+import { mockDoctors, addAppointment, mockPatients } from "@/lib/data";
+import { useAuth } from "@/context/auth-context";
 
 const appointmentFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -37,6 +38,7 @@ const defaultValues: Partial<AppointmentFormValues> = { name: "", email: "" };
 function AppointmentFormContent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
+  const { authState } = useAuth();
   
   const form = useForm<AppointmentFormValues>({
     resolver: zodResolver(appointmentFormSchema),
@@ -50,16 +52,49 @@ function AppointmentFormContent() {
     }
   }, [searchParams, form]);
 
+  useEffect(() => {
+    // Pre-fill form if user is logged in as a patient
+    if (authState.isAuthenticated && authState.userType === 'patient') {
+      // Using first mock patient as example, in real app, fetch patient data
+      const patient = mockPatients[0]; 
+      form.setValue('name', patient.name);
+      form.setValue('email', patient.email);
+    }
+  }, [authState, form]);
+
 
   function onSubmit(data: AppointmentFormValues) {
     const doctor = mockDoctors.find(d => d.id === data.doctor);
+    if (!doctor) {
+        toast({ title: "Error", description: "Selected doctor not found.", variant: "destructive" });
+        return;
+    }
+
+    // In a real app, you'd get the logged-in patient's ID
+    const patientId = authState.isAuthenticated && authState.userType === 'patient' ? "pat1" : "new-patient";
+
+    addAppointment({
+        patientName: data.name,
+        patientId: patientId,
+        doctorName: doctor.name,
+        doctorId: doctor.id,
+        department: doctor.specialty,
+        date: data.date.toISOString(),
+        notes: data.message,
+    });
+    
     toast({
       title: "Appointment Scheduled!",
       description: `Thank you, ${data.name}. Your appointment with ${doctor?.name} on ${format(data.date, "PPP")} has been successfully booked.`,
       variant: "default",
       className: "bg-accent text-accent-foreground border-0",
     });
-    form.reset();
+    form.reset(defaultValues);
+     // Reset doctor field if it was set from URL
+    const doctorId = searchParams.get("doctor");
+    if (doctorId) {
+        form.setValue("doctor", "");
+    }
   }
 
   return (
