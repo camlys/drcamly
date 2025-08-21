@@ -14,8 +14,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { format, formatISO, startOfDay, eachDayOfInterval, addDays } from "date-fns";
-import { DateRange } from "react-day-picker";
+import { format, formatISO, startOfDay } from "date-fns";
 
 export default function DoctorDashboard() {
   const { authState } = useAuth();
@@ -27,10 +26,7 @@ export default function DoctorDashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
   const [doctors, setDoctors] = useState<Doctor[]>(mockDoctors);
   
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(),
-    to: addDays(new Date(), 4)
-  });
+  const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
   
   const currentDoctor = useMemo(() => doctors.find(d => d.id === currentDoctorId), [doctors, currentDoctorId]);
 
@@ -84,26 +80,22 @@ export default function DoctorDashboard() {
   }
 
   const handleSetUnavailability = () => {
-    if(!dateRange?.from || !currentDoctor) {
+    if(!selectedDates || selectedDates.length === 0 || !currentDoctor) {
         toast({
             title: "Error",
-            description: "Please select a date range.",
+            description: "Please select one or more dates.",
             variant: "destructive",
         })
         return;
     }
-
-    const rangeStart = startOfDay(dateRange.from);
-    const rangeEnd = dateRange.to ? startOfDay(dateRange.to) : rangeStart;
-    const datesToUpdate = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
 
     setDoctors(prevDoctors => {
         return prevDoctors.map(doc => {
             if(doc.id === currentDoctorId) {
                 const newUnavailability = [...doc.unavailability];
                 
-                datesToUpdate.forEach(date => {
-                    const dateString = formatISO(date, { representation: 'date' });
+                selectedDates.forEach(date => {
+                    const dateString = formatISO(startOfDay(date), { representation: 'date' });
                     const index = newUnavailability.findIndex(u => u.date === dateString);
 
                     const timesToSet = selectedUnavailableTimes.length > 0 ? selectedUnavailableTimes : timeSlots;
@@ -125,11 +117,9 @@ export default function DoctorDashboard() {
         });
     });
 
-    const formattedStartDate = format(rangeStart, 'PPP');
-    const formattedEndDate = format(rangeEnd, 'PPP');
     toast({
         title: "Unavailability Updated",
-        description: `Your unavailable slots from ${formattedStartDate} to ${formattedEndDate} have been saved.`,
+        description: `Your unavailable slots for the selected dates have been saved.`,
     });
   }
 
@@ -212,13 +202,13 @@ export default function DoctorDashboard() {
                <Card>
                   <CardHeader>
                       <CardTitle>Set Unavailability</CardTitle>
-                      <CardDescription>Select a date range and mark the times you are unavailable. If no times are selected, you'll be marked as unavailable for the entire day.</CardDescription>
+                      <CardDescription>Select dates and times you are unavailable. If no times are selected, you'll be marked as unavailable for the entire day.</CardDescription>
                   </CardHeader>
                   <CardContent className="flex flex-col lg:flex-row items-start gap-4">
                        <Calendar
-                          mode="range"
-                          selected={dateRange}
-                          onSelect={setDateRange}
+                          mode="multiple"
+                          selected={selectedDates}
+                          onSelect={setSelectedDates}
                           className="rounded-md border"
                           disabled={{ before: new Date() }}
                           numberOfMonths={1}
@@ -237,7 +227,7 @@ export default function DoctorDashboard() {
                                     </Label>
                                 </div>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-3">Select specific times to mark as unavailable within the chosen date range.</p>
+                            <p className="text-sm text-muted-foreground mb-3">Select specific times to mark as unavailable for the chosen dates.</p>
                             <div className="grid grid-cols-2 gap-2">
                                 {timeSlots.map(time => (
                                     <div key={time} className="flex items-center space-x-2">
