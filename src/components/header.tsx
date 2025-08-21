@@ -15,11 +15,12 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/auth-context";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
-import { mockNotifications, Notification } from "@/lib/data";
+import { mockNotifications, Notification, mockDoctors, mockPatients } from "@/lib/data";
 import { useState, useMemo, useEffect } from "react";
 import { Badge } from "./ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 function NotificationPanel({ notifications, onOpenChange }: { notifications: Notification[], onOpenChange: (open: boolean) => void }) {
     return (
@@ -49,6 +50,15 @@ function NotificationPanel({ notifications, onOpenChange }: { notifications: Not
 export default function Header() {
   const { authState, logout } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  
+  const currentUser = useMemo(() => {
+    if (!authState.isAuthenticated) return null;
+    if (authState.userType === 'doctor') {
+      return mockDoctors.find(d => d.id === 'doc1');
+    }
+    return mockPatients.find(p => p.id === 'pat1');
+  }, [authState]);
+
 
   const currentUserNotifications = useMemo(() => {
     if (!authState.isAuthenticated) return [];
@@ -82,6 +92,8 @@ export default function Header() {
     logout();
   };
 
+  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('');
+
   return (
     <header className="bg-card/80 backdrop-blur-sm sticky top-0 z-50 w-full border-b">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
@@ -99,7 +111,7 @@ export default function Header() {
               {item.label}
             </Link>
           ))}
-          {authState.isAuthenticated ? (
+          {authState.isAuthenticated && currentUser ? (
             <div className="flex items-center gap-4">
               <DropdownMenu onOpenChange={handleNotificationsOpenChange}>
                   <DropdownMenuTrigger asChild>
@@ -113,13 +125,15 @@ export default function Header() {
 
              <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost">
-                  <User className="mr-2 h-4 w-4" />
-                  Account
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-9 w-9">
+                        <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
+                        <AvatarFallback>{getInitials(currentUser.name)}</AvatarFallback>
+                    </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuLabel>Welcome!</DropdownMenuLabel>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Welcome, {currentUser.name.split(' ')[0]}!</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href={authState.userType === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard'}>Dashboard</Link>
