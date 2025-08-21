@@ -11,11 +11,11 @@ export function getSupabase(): SupabaseClient {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    if (supabaseUrl && supabaseAnonKey) {
+    if (supabaseUrl && supabaseUrl.trim() !== '' && supabaseAnonKey && supabaseAnonKey.trim() !== '') {
         supabase = createClient(supabaseUrl, supabaseAnonKey);
         return supabase;
     } else {
-        console.warn("Supabase URL or Anon Key is missing. Please check your .env.local file and restart the server.");
+        console.warn("Supabase URL or Anon Key is missing or empty. Please check your .env.local file and restart the server.");
         // Provide a mock client to avoid crashes, but it won't work.
         const mockSupabase = {
             from: () => ({
@@ -30,6 +30,9 @@ export function getSupabase(): SupabaseClient {
                     subscribe: () => ({
                         unsubscribe: () => {}
                     })
+                }),
+                subscribe: () => ({
+                    unsubscribe: () => {}
                 })
             }),
             removeChannel: () => {}
