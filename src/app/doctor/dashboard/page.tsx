@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label";
 import { format, formatISO, startOfDay, subDays } from "date-fns";
 import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart, Cell, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ChevronDown } from "lucide-react";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
 
@@ -291,52 +293,61 @@ export default function DoctorDashboard() {
                       </Table>
                   </CardContent>
               </Card>
-               <Card>
-                  <CardHeader>
-                      <CardTitle>Set Unavailability</CardTitle>
-                      <CardDescription>Select dates and times you are unavailable. If no times are selected, you'll be marked as unavailable for the entire day.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-col lg:flex-row items-start gap-4">
-                       <Calendar
-                          mode="multiple"
-                          selected={selectedDates}
-                          onSelect={setSelectedDates}
-                          className="rounded-md border"
-                          disabled={{ before: new Date() }}
-                          numberOfMonths={1}
-                        />
-                        <div className="flex-1 w-full">
-                            <div className="flex items-center justify-between mb-3">
-                               <h4 className="font-medium">Time Slots</h4>
-                                <div className="flex items-center space-x-2">
-                                     <Checkbox 
-                                        id="select-all-times"
-                                        onCheckedChange={(checked) => handleSelectAllTimes(!!checked)}
-                                        checked={selectedUnavailableTimes.length === timeSlots.length}
-                                     />
-                                     <Label htmlFor="select-all-times" className="text-sm font-normal">
-                                        Select All
-                                    </Label>
-                                </div>
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-3">Select specific times to mark as unavailable for the chosen dates.</p>
-                            <div className="grid grid-cols-2 gap-2">
-                                {timeSlots.map(time => (
-                                    <div key={time} className="flex items-center space-x-2">
-                                        <Checkbox 
-                                            id={`time-${time.replace(/\s/g, '')}`}
-                                            checked={selectedUnavailableTimes.includes(time)}
-                                            onCheckedChange={(checked) => handleTimeSelectionChange(time, !!checked)}
-                                        />
-                                        <Label htmlFor={`time-${time.replace(/\s/g, '')}`} className="text-sm font-normal">
-                                            {time}
+              <Card>
+                <Accordion type="single" collapsible>
+                  <AccordionItem value="unavailability" className="border-b-0">
+                    <AccordionTrigger className="p-6">
+                        <div className="flex flex-col items-start">
+                            <CardTitle>Set Unavailability</CardTitle>
+                            <CardDescription className="text-left mt-1">Select dates and times you are unavailable.</CardDescription>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="p-6 pt-0">
+                        <CardDescription className="mb-4">If no times are selected, you'll be marked as unavailable for the entire day for the chosen dates.</CardDescription>
+                        <div className="flex flex-col lg:flex-row items-start gap-4">
+                           <Calendar
+                              mode="multiple"
+                              selected={selectedDates}
+                              onSelect={setSelectedDates}
+                              className="rounded-md border"
+                              disabled={{ before: new Date() }}
+                              numberOfMonths={1}
+                            />
+                            <div className="flex-1 w-full">
+                                <div className="flex items-center justify-between mb-3">
+                                   <h4 className="font-medium">Time Slots</h4>
+                                    <div className="flex items-center space-x-2">
+                                         <Checkbox 
+                                            id="select-all-times"
+                                            onCheckedChange={(checked) => handleSelectAllTimes(!!checked)}
+                                            checked={selectedUnavailableTimes.length === timeSlots.length}
+                                         />
+                                         <Label htmlFor="select-all-times" className="text-sm font-normal">
+                                            Select All
                                         </Label>
                                     </div>
-                                ))}
+                                </div>
+                                <p className="text-sm text-muted-foreground mb-3">Select specific times to mark as unavailable for the chosen dates.</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {timeSlots.map(time => (
+                                        <div key={time} className="flex items-center space-x-2">
+                                            <Checkbox 
+                                                id={`time-${time.replace(/\s/g, '')}`}
+                                                checked={selectedUnavailableTimes.includes(time)}
+                                                onCheckedChange={(checked) => handleTimeSelectionChange(time, !!checked)}
+                                            />
+                                            <Label htmlFor={`time-${time.replace(/\s/g, '')}`} className="text-sm font-normal">
+                                                {time}
+                                            </Label>
+                                        </div>
+                                    ))}
+                                </div>
+                               <Button onClick={handleSetUnavailability} className="w-full mt-4">Save Unavailability</Button>
                             </div>
-                           <Button onClick={handleSetUnavailability} className="w-full mt-4">Save Unavailability</Button>
                         </div>
-                  </CardContent>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </Card>
             </div>
              <Card>
@@ -377,5 +388,7 @@ export default function DoctorDashboard() {
     </div>
   );
 }
+
+    
 
     
