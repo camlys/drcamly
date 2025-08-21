@@ -75,10 +75,11 @@ export default function DoctorSearch() {
               placeholder="Search by doctor's name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-grow"
+              onBlur={() => setSearchTerm('')}
+              className="flex-grow border-0 focus:ring-0"
             />
             <Select onValueChange={setSpecialty} defaultValue="All" disabled={loading}>
-              <SelectTrigger className="w-full md:w-[240px]" aria-label="Filter by specialty">
+              <SelectTrigger className="w-full md:w-[240px] border-0 focus:ring-0" aria-label="Filter by specialty">
                 <SelectValue placeholder="Filter by specialty" />
               </SelectTrigger>
               <SelectContent>
