@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Stethoscope, Menu, LogIn, User, LogOut, Bell, MessageSquare, CalendarCheck } from "lucide-react";
+import { Stethoscope, Menu, LogIn, User, LogOut, Bell, MessageSquare, CalendarCheck, UserPlus,ClipboardUser } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -194,37 +194,46 @@ export default function Header() {
                     </Link>
                   </SheetClose>
                 ))}
+                 <hr className="my-2"/>
                 {authState.isAuthenticated ? (
                   <>
                      <SheetClose asChild>
-                        <Link href={authState.userType === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard'} className="block px-2 py-1 text-lg font-medium transition-colors hover:text-primary">Dashboard</Link>
+                        <Link href={authState.userType === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard'} className="flex items-center gap-2 px-2 py-2 text-lg font-medium transition-colors hover:text-primary">
+                            <User /> Dashboard
+                        </Link>
                      </SheetClose>
                      <SheetClose asChild>
-                        <button onClick={handleLogout} className="block px-2 py-1 text-lg font-medium transition-colors hover:text-primary text-left w-full">Logout</button>
+                        <button onClick={handleLogout} className="flex items-center gap-2 px-2 py-2 text-lg font-medium transition-colors hover:text-primary text-left w-full">
+                            <LogOut /> Logout
+                        </button>
                      </SheetClose>
                   </>
                 ) : (
-                  <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="login-signup" className="border-b-0">
-                      <AccordionTrigger className="px-2 py-1 text-lg font-medium transition-colors hover:text-primary hover:no-underline">
-                        Login / Sign Up
-                      </AccordionTrigger>
-                      <AccordionContent className="pl-6">
-                         <SheetClose asChild>
-                          <Link href="/patient/login" className="block py-2 text-base font-medium transition-colors hover:text-primary">Patient Login</Link>
-                        </SheetClose>
-                        <SheetClose asChild>
-                          <Link href="/doctor/login" className="block py-2 text-base font-medium transition-colors hover:text-primary">Doctor Login</Link>
-                        </SheetClose>
-                         <SheetClose asChild>
-                          <Link href="/patient/signup" className="block py-2 text-base font-medium transition-colors hover:text-primary">Patient Sign Up</Link>
-                        </SheetClose>
-                         <SheetClose asChild>
-                          <Link href="/doctor/signup" className="block py-2 text-base font-medium transition-colors hover:text-primary">Doctor Sign Up</Link>
-                        </SheetClose>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
+                   <>
+                    <p className="px-2 text-base font-semibold text-muted-foreground">Access Your Account</p>
+                    <SheetClose asChild>
+                        <Link href="/patient/login" className="flex items-center gap-2 px-2 py-2 text-lg font-medium transition-colors hover:text-primary">
+                            <LogIn /> Patient Login
+                        </Link>
+                    </SheetClose>
+                     <SheetClose asChild>
+                        <Link href="/doctor/login" className="flex items-center gap-2 px-2 py-2 text-lg font-medium transition-colors hover:text-primary">
+                           <ClipboardUser /> Doctor Login
+                        </Link>
+                    </SheetClose>
+                    <hr className="my-2"/>
+                     <p className="px-2 text-base font-semibold text-muted-foreground">New Here?</p>
+                    <SheetClose asChild>
+                        <Link href="/patient/signup" className="flex items-center gap-2 px-2 py-2 text-lg font-medium transition-colors hover:text-primary">
+                            <UserPlus /> Patient Sign Up
+                        </Link>
+                    </SheetClose>
+                     <SheetClose asChild>
+                        <Link href="/doctor/signup" className="flex items-center gap-2 px-2 py-2 text-lg font-medium transition-colors hover:text-primary">
+                            <UserPlus /> Doctor Sign Up
+                        </Link>
+                    </SheetClose>
+                  </>
                 )}
               </nav>
               <SheetClose asChild>
