@@ -7,6 +7,19 @@ export const timeSlots = [
     "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM"
 ];
 
+// Sample data to be used when Supabase is not configured.
+const sampleDoctors: Doctor[] = [
+    { id: 'doc1', name: 'Dr. Evelyn Reed', specialty: 'Cardiology', avatarUrl: 'https://i.pravatar.cc/150?img=1', consultationFee: 250, unavailability: [], ratings: [], bio: "Dr. Reed is a board-certified cardiologist with over 15 years of experience in treating heart conditions." },
+    { id: 'doc2', name: 'Dr. Samuel Chen', specialty: 'Neurology', avatarUrl: 'https://i.pravatar.cc/150?img=2', consultationFee: 300, unavailability: [], ratings: [], bio: "Dr. Chen is a leading neurologist, specializing in brain and spinal cord disorders." },
+    { id: 'doc3', name: 'Dr. Anika Sharma', specialty: 'Pediatrics', avatarUrl: 'https://i.pravatar.cc/150?img=3', consultationFee: 150, unavailability: [], ratings: [], bio: "Dr. Sharma provides compassionate care for children from infancy through adolescence." },
+];
+
+const sampleTestimonials: Testimonial[] = [
+  { id: '1', name: 'John Doe', quote: 'Dr. Reed was incredibly attentive and thorough. I felt very well taken care of.', avatar: 'https://i.pravatar.cc/150?img=4' },
+  { id: '2', name: 'Jane Smith', quote: 'The entire team at Dr.Camly is professional and friendly. The booking process was seamless.', avatar: 'https://i.pravatar.cc/150?img=5' },
+];
+
+
 // Generic fetch function
 async function fetchData<T>(table: string, columns: string = '*', filter?: any): Promise<{ data: T[] | null, error: PostgrestError | null }> {
     const supabase = getSupabase();
@@ -21,6 +34,10 @@ async function fetchData<T>(table: string, columns: string = '*', filter?: any):
 export const getDoctors = async (): Promise<Doctor[]> => {
     const { data, error } = await fetchData<Doctor>('doctors', '*, ratings(*)');
     if (error) {
+        if(error.message === 'Supabase not configured') {
+            console.warn("Supabase not configured. Returning sample doctor data.");
+            return sampleDoctors;
+        }
         console.error('Error fetching doctors:', error);
         return [];
     }
@@ -29,6 +46,9 @@ export const getDoctors = async (): Promise<Doctor[]> => {
 export const getDoctorById = async (id: string): Promise<Doctor | null> => {
     const { data, error } = await fetchData<Doctor>('doctors', '*, ratings(*)', { id });
      if (error || !data || data.length === 0) {
+        if(error?.message === 'Supabase not configured') {
+             return sampleDoctors.find(d => d.id === id) || null;
+        }
         console.error('Error fetching doctor:', error);
         return null;
     }
@@ -129,6 +149,10 @@ export const getTestimonials = async (): Promise<Testimonial[]> => {
     const supabase = getSupabase();
     const { data, error } = await supabase.from('testimonials').select('*');
     if (error) {
+        if(error.message === 'Supabase not configured') {
+            console.warn("Supabase not configured. Returning sample testimonials data.");
+            return sampleTestimonials;
+        }
         console.error("Error fetching testimonials", error);
         return [];
     }

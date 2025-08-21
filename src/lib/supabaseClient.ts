@@ -23,7 +23,7 @@ export function getSupabase(): SupabaseClient {
         // Provide a mock client to avoid crashes, but it won't work.
         const mockSupabase = {
             from: () => ({
-                select: async () => ({ data: null, error: { message: "Supabase not configured" } as any }),
+                select: async () => ({ data: null, error: { message: "Supabase not configured", details: "Credentials are not set up.", hint: "Please update supabaseClient.ts", code: "404" } as any }),
                 insert: async () => ({ data: null, error: { message: "Supabase not configured" } as any }),
                 update: async () => ({ data: null, error: { message: "Supabase not configured" } as any }),
                 delete: async () => ({ data: null, error: { message: "Supabase not configured" } as any }),
