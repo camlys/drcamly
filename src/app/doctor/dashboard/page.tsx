@@ -1,9 +1,8 @@
 
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
@@ -11,25 +10,37 @@ import { mockAppointments, mockPatients, Appointment, Patient } from "@/lib/data
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { useToast } from "@/hooks/use-toast";
+import type { DateRange } from "react-day-picker";
 
 export default function DoctorDashboard() {
-  const { authState, logout } = useAuth();
+  const { authState } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   // Mocking a logged-in doctor.
   const currentDoctorId = "doc1";
+  
+  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
+  const [unavailableDates, setUnavailableDates] = useState<DateRange | undefined>();
 
   const { todaysAppointments, doctorPatients } = useMemo(() => {
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    today.setHours(0, 0, 0, 0);
 
-    const appointments = mockAppointments.filter(a => a.doctorId === currentDoctorId && a.date.startsWith(todayStr) && a.status === 'Upcoming');
+    const todaysAppts = appointments.filter(a => {
+        const apptDate = new Date(a.date);
+        apptDate.setHours(0, 0, 0, 0);
+        return a.doctorId === currentDoctorId && apptDate.getTime() === today.getTime();
+    });
     
-    const patientIds = new Set(mockAppointments.filter(a => a.doctorId === currentDoctorId).map(a => a.patientId));
+    const patientIds = new Set(appointments.filter(a => a.doctorId === currentDoctorId).map(a => a.patientId));
     const patients = mockPatients.filter(p => patientIds.has(p.id));
 
-    return { todaysAppointments: appointments, doctorPatients: patients };
-  }, [currentDoctorId]);
+    return { todaysAppointments: todaysAppts, doctorPatients: patients };
+  }, [currentDoctorId, appointments]);
 
 
   useEffect(() => {
@@ -37,6 +48,29 @@ export default function DoctorDashboard() {
       router.push('/doctor/login');
     }
   }, [authState, router]);
+
+  const handleStatusChange = (appointmentId: string, newStatus: "Upcoming" | "Completed" | "Cancelled") => {
+    setAppointments(prev => prev.map(appt => appt.id === appointmentId ? { ...appt, status: newStatus } : appt));
+    toast({
+        title: "Status Updated",
+        description: `Appointment status has been changed to ${newStatus}.`,
+    });
+  };
+
+  const handleSetUnavailability = () => {
+    if(unavailableDates) {
+        toast({
+            title: "Availability Updated",
+            description: "Your unavailable dates have been saved.",
+        });
+    } else {
+        toast({
+            title: "No Dates Selected",
+            description: "Please select a date range to mark as unavailable.",
+            variant: "destructive",
+        })
+    }
+  }
 
   if (!authState.isAuthenticated || authState.userType !== 'doctor') {
     return <div className="flex items-center justify-center min-h-[calc(100vh-14rem)]">Loading...</div>;
@@ -82,7 +116,7 @@ export default function DoctorDashboard() {
                               <TableRow>
                                   <TableHead>Time</TableHead>
                                   <TableHead>Patient</TableHead>
-                                  <TableHead>Status</TableHead>
+                                  <TableHead className="w-[150px]">Status</TableHead>
                               </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -90,7 +124,21 @@ export default function DoctorDashboard() {
                                 <TableRow key={appt.id}>
                                   <TableCell>{appt.time}</TableCell>
                                   <TableCell>{appt.patientName}</TableCell>
-                                  <TableCell><Badge>{appt.status}</Badge></TableCell>
+                                  <TableCell>
+                                    <Select 
+                                        value={appt.status} 
+                                        onValueChange={(value: "Upcoming" | "Completed" | "Cancelled") => handleStatusChange(appt.id, value)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Upcoming">Upcoming</SelectItem>
+                                            <SelectItem value="Completed">Completed</SelectItem>
+                                            <SelectItem value="Cancelled">Cancelled</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                  </TableCell>
                                 </TableRow>
                               )) : (
                                 <TableRow><TableCell colSpan={3} className="text-center">No appointments for today.</TableCell></TableRow>
@@ -99,7 +147,24 @@ export default function DoctorDashboard() {
                       </Table>
                   </CardContent>
               </Card>
-              <Card>
+               <Card>
+                  <CardHeader>
+                      <CardTitle>Set Availability</CardTitle>
+                      <CardDescription>Select dates you are unavailable.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center gap-4">
+                       <Calendar
+                          mode="range"
+                          selected={unavailableDates}
+                          onSelect={setUnavailableDates}
+                          className="rounded-md border"
+                          disabled={{ before: new Date() }}
+                        />
+                      <Button onClick={handleSetUnavailability} className="w-full">Save Unavailability</Button>
+                  </CardContent>
+              </Card>
+            </div>
+             <Card>
                   <CardHeader>
                       <CardTitle>My Patients</CardTitle>
                   </CardHeader>
@@ -132,9 +197,9 @@ export default function DoctorDashboard() {
                       </Table>
                   </CardContent>
               </Card>
-            </div>
         </div>
       </main>
     </div>
   );
-}
+
+    
