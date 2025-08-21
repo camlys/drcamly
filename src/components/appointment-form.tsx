@@ -93,7 +93,7 @@ function AppointmentFormContent() {
 
   useEffect(() => {
     const doctorId = searchParams.get("doctor");
-    if (doctorId && mockDoctors.some(d => d.id === doctorId)) {
+    if (doctorId && mockDoctors.some(d => d.id === doctorId) && !isEditing) {
       form.setValue("doctor", doctorId);
     }
 
@@ -111,7 +111,7 @@ function AppointmentFormContent() {
             });
         }
     }
-  }, [searchParams, form, rescheduleId]);
+  }, [searchParams, form, rescheduleId, isEditing]);
 
   useEffect(() => {
     if (authState.isAuthenticated && authState.userType === 'patient' && !isEditing) {
