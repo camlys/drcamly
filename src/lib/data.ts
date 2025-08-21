@@ -114,11 +114,10 @@ export let mockAppointments: Appointment[] = [
 ];
 
 // Function to add a new appointment
-export const addAppointment = (appointment: Omit<Appointment, 'id' | 'status' | 'time'>) => {
+export const addAppointment = (appointment: Omit<Appointment, 'id' | 'status'>) => {
   const newAppointment: Appointment = {
     ...appointment,
     id: `appt${mockAppointments.length + 1}`,
-    time: "3:30 PM", // Placeholder time, can be improved later
     status: 'Upcoming',
   };
   mockAppointments.push(newAppointment);

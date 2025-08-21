@@ -28,12 +28,18 @@ const appointmentFormSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
   doctor: z.string({ required_error: "Please select a doctor." }),
   date: z.date({ required_error: "A date for the appointment is required." }),
+  time: z.string({ required_error: "A time for the appointment is required." }),
   message: z.string().optional(),
 });
 
 type AppointmentFormValues = z.infer<typeof appointmentFormSchema>;
 
 const defaultValues: Partial<AppointmentFormValues> = { name: "", email: "" };
+
+const timeSlots = [
+    "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+    "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM"
+];
 
 function AppointmentFormContent() {
   const { toast } = useToast();
@@ -80,12 +86,13 @@ function AppointmentFormContent() {
         doctorId: doctor.id,
         department: doctor.specialty,
         date: data.date.toISOString(),
+        time: data.time,
         notes: data.message,
     });
     
     toast({
       title: "Appointment Scheduled!",
-      description: `Thank you, ${data.name}. Your appointment with ${doctor?.name} on ${format(data.date, "PPP")} has been successfully booked.`,
+      description: `Thank you, ${data.name}. Your appointment with ${doctor?.name} on ${format(data.date, "PPP")} at ${data.time} has been successfully booked.`,
       variant: "default",
       className: "bg-accent text-accent-foreground border-0",
     });
@@ -128,25 +135,39 @@ function AppointmentFormContent() {
                         <FormMessage />
                       </FormItem>
                     )} />
-                    <FormField control={form.control} name="date" render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Appointment Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))} initialFocus />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField control={form.control} name="date" render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Appointment Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                  {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))} initialFocus />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="time" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Appointment Time</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select a time" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              {timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
                     <FormField control={form.control} name="message" render={({ field }) => (
                         <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Tell us a little bit about your needs..." className="resize-none" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
