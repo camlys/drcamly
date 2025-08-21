@@ -18,7 +18,8 @@ import { format, formatISO, startOfDay, subDays } from "date-fns";
 import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart, Cell, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, MessageSquare } from "lucide-react";
+import Link from "next/link";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
 
@@ -191,7 +192,7 @@ export default function DoctorDashboard() {
                     <CardDescription>Manage your patients and appointments.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <h3 className="text-lg font-medium">Patients</h3>
                       <p className="text-muted-foreground">{doctorPatients.length} active patients</p>
@@ -199,6 +200,11 @@ export default function DoctorDashboard() {
                      <div>
                       <h3 className="text-lg font-medium">Today's Appointments</h3>
                       <p className="text-muted-foreground">{todaysAppointments.length} appointments scheduled</p>
+                    </div>
+                    <div className="flex items-center">
+                      <Button asChild>
+                        <Link href="/chat"><MessageSquare className="mr-2 h-4 w-4" /> Go to Messages</Link>
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -388,7 +394,3 @@ export default function DoctorDashboard() {
     </div>
   );
 }
-
-    
-
-    

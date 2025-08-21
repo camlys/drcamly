@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
 import Link from "next/link";
-import { mockAppointments, Appointment } from "@/lib/data";
+import { mockAppointments, Appointment, mockPatients } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MessageSquare } from "lucide-react";
 
 export default function PatientDashboard() {
   const { authState } = useAuth();
@@ -50,6 +51,9 @@ export default function PatientDashboard() {
           </TableRow>
       ));
   }
+  
+  const currentPatient = useMemo(() => mockPatients.find(p => p.id === currentPatientId), [currentPatientId]);
+
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-background">
@@ -60,13 +64,57 @@ export default function PatientDashboard() {
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Welcome, {mockAppointments.find(a => a.patientId === currentPatientId)?.patientName || 'Patient'}!</CardTitle>
+                    <CardTitle>Welcome, {currentPatient?.name || 'Patient'}!</CardTitle>
                     <CardDescription>This is your personal health dashboard.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <p>Here you can view your upcoming appointments, medical records, and more.</p>
+                    <p>Here you can view your upcoming appointments, medical records, and messages.</p>
                 </CardContent>
             </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Next Appointment</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                       {upcomingAppointments.length > 0 ? (
+                           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 rounded-lg bg-secondary">
+                               <div>
+                                  <p className="text-xl font-bold">{upcomingAppointments[0].doctorName}</p>
+                                  <p className="text-muted-foreground">{upcomingAppointments[0].department}</p>
+                                  <p className="mt-2 font-semibold">{format(new Date(upcomingAppointments[0].date), "PPPP")} at {upcomingAppointments[0].time}</p>
+                               </div>
+                                <Button asChild className="mt-4 sm:mt-0">
+                                  <Link href="/booking">Reschedule</Link>
+                                </Button>
+                           </div>
+                       ) : (
+                           <div className="text-center p-4 rounded-lg bg-secondary">
+                              <p>You have no upcoming appointments.</p>
+                               <Button asChild className="mt-4">
+                                  <Link href="/booking">Book a new appointment</Link>
+                              </Button>
+                           </div>
+                       )}
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Messages</CardTitle>
+                        <CardDescription>Communicate with your doctors.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col items-center justify-center text-center">
+                       <MessageSquare className="w-12 h-12 text-muted-foreground mb-4" />
+                       <p className="mb-4 text-muted-foreground">You have 2 unread messages.</p>
+                       <Button asChild>
+                          <Link href="/chat">View Messages</Link>
+                       </Button>
+                    </CardContent>
+                </Card>
+            </div>
+            
             <Tabs defaultValue="upcoming">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="upcoming">Upcoming Appointments</TabsTrigger>

@@ -25,6 +25,29 @@ export type Patient = {
     email: string;
 };
 
+export type ChatParticipant = {
+    id: string;
+    name: string;
+    type: 'doctor' | 'patient';
+}
+
+export type ChatMessage = {
+    id: string;
+    conversationId: string;
+    senderId: string;
+    text: string;
+    timestamp: string;
+}
+
+export type ChatConversation = {
+    id: string;
+    participants: ChatParticipant[];
+    lastMessage: string;
+    lastMessageTimestamp: string;
+    unreadCount: number;
+}
+
+
 export const timeSlots = [
     "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
     "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM"
@@ -129,3 +152,44 @@ export const addAppointment = (appointment: Omit<Appointment, 'id' | 'status'>) 
   mockAppointments.push(newAppointment);
   return newAppointment;
 };
+
+export const mockConversations: ChatConversation[] = [
+    {
+        id: 'convo1',
+        participants: [
+            { id: 'pat1', name: 'John Doe', type: 'patient' },
+            { id: 'doc1', name: 'Dr. Evelyn Reed', type: 'doctor' }
+        ],
+        lastMessage: 'Thank you, Doctor!',
+        lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+        unreadCount: 0,
+    },
+    {
+        id: 'convo2',
+        participants: [
+            { id: 'pat1', name: 'John Doe', type: 'patient' },
+            { id: 'doc2', name: 'Dr. Marcus Thorne', type: 'doctor' }
+        ],
+        lastMessage: 'I have a follow-up question about my prescription.',
+        lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+        unreadCount: 2,
+    },
+    {
+        id: 'convo3',
+        participants: [
+            { id: 'pat2', name: 'Jane Smith', type: 'patient' },
+            { id: 'doc1', name: 'Dr. Evelyn Reed', type: 'doctor' }
+        ],
+        lastMessage: 'See you next week.',
+        lastMessageTimestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+        unreadCount: 0,
+    }
+];
+
+export const mockMessages: ChatMessage[] = [
+    { id: 'msg1', conversationId: 'convo1', senderId: 'doc1', text: 'Your test results are back and everything looks normal.', timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString() },
+    { id: 'msg2', conversationId: 'convo1', senderId: 'pat1', text: 'That is great news!', timestamp: new Date(Date.now() - 1000 * 60 * 8).toISOString() },
+    { id: 'msg3', conversationId: 'convo1', senderId: 'pat1', text: 'Thank you, Doctor!', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
+    { id: 'msg4', conversationId: 'convo2', senderId: 'doc2', text: 'Hello, how can I help you?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString() },
+    { id: 'msg5', conversationId: 'convo2', senderId: 'pat1', text: 'I have a follow-up question about my prescription.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() }
+];
