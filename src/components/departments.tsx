@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, BrainCircuit, Baby, Bone, Eye, Stethoscope, Layers, BrainCog, AirVent } from 'lucide-react';
+import { Heart, BrainCircuit, Baby, Bone, Eye, Stethoscope, Layers, BrainCog, AirVent, Droplets, Wind, Syringe } from 'lucide-react';
 
 const departments = [
   { name: "Cardiology", description: "Expert care for your heart.", icon: Heart },
@@ -11,6 +11,9 @@ const departments = [
   { name: "Dermatology", description: "Specialized skin care services.", icon: Layers },
   { name: "Psychiatry", description: "Supporting your mental well-being.", icon: BrainCog },
   { name: "Pulmonology", description: "Care for your respiratory system.", icon: AirVent },
+  { name: "Urology", description: "Treating urinary tract conditions.", icon: Droplets },
+  { name: "Gastroenterology", description: "Care for digestive system disorders.", icon: Wind },
+  { name: "Endocrinology", description: "Managing hormone-related diseases.", icon: Syringe },
 ];
 
 export default function Departments() {
@@ -26,7 +29,7 @@ export default function Departments() {
             </p>
           </div>
         </div>
-        <div className="mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8 pt-12">
+        <div className="mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8 pt-12">
           {departments.map((dept) => {
             const Icon = dept.icon;
             return (
