@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Stethoscope, Menu, LogIn, User, LogOut } from "lucide-react";
+import { Stethoscope, Menu, LogIn, User, LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/auth-context";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 
 export default function Header() {
   const { authState, logout } = useAuth();
@@ -125,9 +126,27 @@ export default function Header() {
                      </SheetClose>
                   </>
                 ) : (
-                  <SheetClose asChild>
-                    <Link href="/patient/login" className="block px-2 py-1 text-lg font-medium transition-colors hover:text-primary">Login / Sign Up</Link>
-                  </SheetClose>
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="login-signup" className="border-b-0">
+                      <AccordionTrigger className="px-2 py-1 text-lg font-medium transition-colors hover:text-primary hover:no-underline">
+                        Login / Sign Up
+                      </AccordionTrigger>
+                      <AccordionContent className="pl-6">
+                         <SheetClose asChild>
+                          <Link href="/patient/login" className="block py-2 text-base font-medium transition-colors hover:text-primary">Patient Login</Link>
+                        </SheetClose>
+                        <SheetClose asChild>
+                          <Link href="/doctor/login" className="block py-2 text-base font-medium transition-colors hover:text-primary">Doctor Login</Link>
+                        </SheetClose>
+                         <SheetClose asChild>
+                          <Link href="/patient/signup" className="block py-2 text-base font-medium transition-colors hover:text-primary">Patient Sign Up</Link>
+                        </SheetClose>
+                         <SheetClose asChild>
+                          <Link href="/doctor/signup" className="block py-2 text-base font-medium transition-colors hover:text-primary">Doctor Sign Up</Link>
+                        </SheetClose>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
                 )}
               </nav>
               <SheetClose asChild>
