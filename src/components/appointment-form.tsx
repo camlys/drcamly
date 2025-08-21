@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { mockDoctors, addAppointment, mockPatients, timeSlots, mockAppointments } from "@/lib/data";
 import { useAuth } from "@/context/auth-context";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 const appointmentFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -29,12 +30,17 @@ const appointmentFormSchema = z.object({
   doctor: z.string({ required_error: "Please select a doctor." }),
   date: z.date({ required_error: "A date for the appointment is required." }),
   time: z.string({ required_error: "A time for the appointment is required." }),
+  consultationType: z.enum(["In-Person", "Online"], { required_error: "Please select a consultation type."}),
   message: z.string().optional(),
 });
 
 type AppointmentFormValues = z.infer<typeof appointmentFormSchema>;
 
-const defaultValues: Partial<AppointmentFormValues> = { name: "", email: "" };
+const defaultValues: Partial<AppointmentFormValues> = { 
+  name: "", 
+  email: "",
+  consultationType: "In-Person",
+};
 
 function AppointmentFormContent() {
   const { toast } = useToast();
@@ -113,12 +119,13 @@ function AppointmentFormContent() {
         department: doctor.specialty,
         date: data.date.toISOString(),
         time: data.time,
+        consultationType: data.consultationType,
         notes: data.message,
     });
     
     toast({
       title: "Appointment Scheduled!",
-      description: `Thank you, ${data.name}. Your appointment with ${doctor?.name} on ${format(data.date, "PPP")} at ${data.time} has been successfully booked.`,
+      description: `Thank you, ${data.name}. Your ${data.consultationType} appointment with ${doctor?.name} on ${format(data.date, "PPP")} at ${data.time} has been successfully booked.`,
       variant: "default",
       className: "bg-accent text-accent-foreground border-0",
     });
@@ -197,6 +204,28 @@ function AppointmentFormContent() {
                         </FormItem>
                       )} />
                     </div>
+                     <FormField control={form.control} name="consultationType" render={({ field }) => (
+                        <FormItem className="space-y-3">
+                            <FormLabel>Consultation Type</FormLabel>
+                            <FormControl>
+                                <RadioGroup
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                className="flex flex-row space-x-4"
+                                >
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                    <FormControl><RadioGroupItem value="In-Person" /></FormControl>
+                                    <FormLabel className="font-normal">In-Person Visit</FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                    <FormControl><RadioGroupItem value="Online" /></FormControl>
+                                    <FormLabel className="font-normal">Online Consultation</FormLabel>
+                                </FormItem>
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )} />
                     <FormField control={form.control} name="message" render={({ field }) => (
                         <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Tell us a little bit about your needs..." className="resize-none" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />

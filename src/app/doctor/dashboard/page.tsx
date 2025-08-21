@@ -20,7 +20,7 @@ import { format, formatISO, startOfDay, subDays } from "date-fns";
 import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart, Cell, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { MessageSquare, UserCircle, Pencil, Camera } from "lucide-react";
+import { MessageSquare, UserCircle, Pencil, Camera, Video, Building } from "lucide-react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { z } from "zod";
@@ -444,6 +444,7 @@ export default function DoctorDashboard() {
                                 <TableRow>
                                     <TableHead>Time</TableHead>
                                     <TableHead>Patient</TableHead>
+                                    <TableHead>Type</TableHead>
                                     <TableHead className="w-[150px]">Status</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -452,6 +453,12 @@ export default function DoctorDashboard() {
                                   <TableRow key={appt.id}>
                                     <TableCell>{appt.time}</TableCell>
                                     <TableCell>{appt.patientName}</TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            {appt.consultationType === 'Online' ? <Video className="h-4 w-4" /> : <Building className="h-4 w-4" />}
+                                            <span>{appt.consultationType}</span>
+                                        </div>
+                                    </TableCell>
                                     <TableCell>
                                       <Select 
                                           value={appt.status} 
@@ -469,7 +476,7 @@ export default function DoctorDashboard() {
                                     </TableCell>
                                   </TableRow>
                                 )) : (
-                                  <TableRow><TableCell colSpan={3} className="text-center">No appointments for today.</TableCell></TableRow>
+                                  <TableRow><TableCell colSpan={4} className="text-center">No appointments for today.</TableCell></TableRow>
                                 )}
                             </TableBody>
                         </Table>

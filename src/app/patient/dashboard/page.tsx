@@ -14,7 +14,7 @@ import { mockAppointments, Appointment, mockPatients, updatePatient, Patient } f
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, Cake, Phone, User, Pencil, CalendarIcon, Camera } from "lucide-react";
+import { MessageSquare, Cake, Phone, User, Pencil, CalendarIcon, Camera, Video, Building } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -93,13 +93,19 @@ export default function PatientDashboard() {
 
   const renderAppointmentRows = (appointments: Appointment[]) => {
       if (appointments.length === 0) {
-          return <TableRow><TableCell colSpan={4} className="text-center">No appointments found.</TableCell></TableRow>;
+          return <TableRow><TableCell colSpan={5} className="text-center">No appointments found.</TableCell></TableRow>;
       }
       return appointments.map(appt => (
           <TableRow key={appt.id}>
             <TableCell>{format(new Date(appt.date), "PPP")} at {appt.time}</TableCell>
             <TableCell>{appt.doctorName}</TableCell>
             <TableCell>{appt.department}</TableCell>
+            <TableCell>
+                 <div className="flex items-center gap-2">
+                    {appt.consultationType === 'Online' ? <Video className="h-4 w-4" /> : <Building className="h-4 w-4" />}
+                    <span>{appt.consultationType}</span>
+                </div>
+            </TableCell>
             <TableCell><Badge variant={appt.status === 'Completed' ? 'secondary' : appt.status === 'Cancelled' ? 'destructive' : 'default'}>{appt.status}</Badge></TableCell>
           </TableRow>
       ));
@@ -274,6 +280,10 @@ export default function PatientDashboard() {
                                   <p className="text-xl font-bold">{upcomingAppointments[0].doctorName}</p>
                                   <p className="text-muted-foreground">{upcomingAppointments[0].department}</p>
                                   <p className="mt-2 font-semibold">{format(new Date(upcomingAppointments[0].date), "PPPP")} at {upcomingAppointments[0].time}</p>
+                                   <div className="flex items-center gap-2 mt-2">
+                                        {upcomingAppointments[0].consultationType === 'Online' ? <Video className="h-5 w-5 text-primary" /> : <Building className="h-5 w-5 text-primary" />}
+                                        <span className="font-medium">{upcomingAppointments[0].consultationType}</span>
+                                    </div>
                                </div>
                                 <Button asChild className="mt-4 md:mt-0">
                                   <Link href="/booking">Reschedule</Link>
@@ -324,6 +334,7 @@ export default function PatientDashboard() {
                                       <TableHead>Date & Time</TableHead>
                                       <TableHead>Doctor</TableHead>
                                       <TableHead>Department</TableHead>
+                                      <TableHead>Type</TableHead>
                                       <TableHead>Status</TableHead>
                                   </TableRow>
                               </TableHeader>
@@ -352,6 +363,7 @@ export default function PatientDashboard() {
                                       <TableHead>Date & Time</TableHead>
                                       <TableHead>Doctor</TableHead>
                                       <TableHead>Department</TableHead>
+                                      <TableHead>Type</TableHead>
                                       <TableHead>Status</TableHead>
                                   </TableRow>
                               </TableHeader>
